@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>중계중 1-2 학급 스케줄러</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; height: 100vh; }
+    
+    /* Header */
+    header { background-color: #4A90E2; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    header h1 { font-size: 1.2rem; }
+    .auth-status { font-size: 0.9rem; display: flex; gap: 10px; align-items: center; }
+    .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+    .btn-login { background-color: white; color: #4A90E2; }
+    .btn-logout { background-color: #e74c3c; color: white; }
+
+    /* Main Container (Chat-like Feed) */
+    main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    
+    /* Schedule Cards (Message style) */
+    .schedule-card { background-color: white; border-radius: 12px; padding: 14px 18px; max-width: 85%; box-shadow: 0 1px 3px rgba(0,0,0,0.08); align-self: flex-start; position: relative; width: 100%; max-width: 500px; }
+    .schedule-card.priority-high { border-left: 5px solid #e74c3c; }
+    .schedule-card.priority-medium { border-left: 5px solid #f39c12; }
+    .schedule-card.priority-low { border-left: 5px solid #2ecc71; }
+    
+    .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85rem; color: #666; }
+    .badge-subject { background-color: #eef2f7; color: #333; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+    .badge-priority { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; color: white; }
+    .badge-priority.high { background-color: #e74c3c; }
+    .badge-priority.medium { background-color: #f39c12; }
+    .badge-priority.low { background-color: #2ecc71; }
+    .date-badge { margin-left: auto; font-weight: bold; color: #2c3e50; background: #eef6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #d0e3ff; }
+    
+    .card-title { font-size: 1rem; color: #2c3e50; margin: 8px 0; word-break: break-all; }
+    .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
+
+    /* Input Bar (Messenger Bar) */
+    .input-bar { background-color: white; border-top: 1px solid #ddd; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .controls-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .controls-row input, .controls-row select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; }
+    .message-row { display: flex; gap: 8px; }
+    .message-row input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 0.95rem; }
+    .btn-send { background-color: #4A90E2; color: white; border: none; padding: 0 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-send:disabled { background-color: #ccc; cursor: not-allowed; }
+
+    /* Login Modal */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; }
+    .modal-content input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    .modal-content button { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .hidden { display: none !important; }
+    .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <h1>📅 학급 수행평가 스케줄러</h1>
+    <div class="auth-status">
+      <span id="userLabel">비로그인 상태 (조회전용)</span>
+      <button id="btnLogin" class="btn-sm btn-login" onclick="openLoginModal()">로그인</button>
+      <button id="btnLogout" class="btn-sm btn-logout hidden" onclick="handleLogout()">로그아웃</button>
+    </div>
+  </header>
+
+  <!-- Schedule Feed (Chat-style) -->
+  <main id="scheduleFeed">
+    <div style="text-align: center; color: #888; margin-top: 20px;">스케줄을 불러오는 중입니다...</div>
+  </main>
+
+  <!-- Input Bar -->
+  <div class="input-bar">
+    <div class="controls-row">
+      <input type="date" id="inputDate">
+      <select id="inputSubject">
+        <option value="국어">국어</option>
+        <option value="수학">수학</option>
+        <option value="영어">영어</option>
+        <option value="과학">과학</option>
+        <option value="사회">사회</option>
+        <option value="기타">기타</option>
+      </select>
+      <select id="inputPriority">
+        <option value="medium">중요도: 보통</option>
+        <option value="high">중요도: 높음 (상)</option>
+        <option value="low">중요도: 낮음 (하)</option>
+      </select>
+    </div>
+    <div class="message-row">
+      <input type="text" id="inputContent" placeholder="로그인 후 수행평가 스케줄을 입력할 수 있습니다..." disabled>
+      <button id="btnSend" class="btn-send" onclick="uploadSchedule()" disabled>등록</button>
+    </div>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>학생 로그인</h2>
+      <input type="text" id="loginName" placeholder="이름 (예: 홍길동)">
+      <input type="password" id="loginPw" placeholder="비밀번호">
+      <div id="loginError" class="error-msg"></div>
+      <button onclick="handleLogin()">로그인</button>
+      <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
+
+  <!-- Firebase Module Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      push, 
+      onValue, 
+      get, 
+      child 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // 1. URL Path를 /scheduler 로 고정
+    if (window.location.pathname !== '/scheduler') {
+      history.replaceState(null, '', '/scheduler');
+    }
+
+    // 2. Firebase 설정 (본인의 키 정보로 교체하세요)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
+      authDomain: "school-scheduler-site.firebaseapp.com",
+      projectId: "school-scheduler-site",
+      storageBucket: "school-scheduler-site.firebasestorage.app",
+      messagingSenderId: "795313018608",
+      appId: "1:795313018608:web:e27b73e0be3fbb9bccd435"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    setPersistence(auth, browserLocalPersistence);
+
+    let currentUserProfile = null;
+
+    // 오늘 날짜를 기본값으로 세팅
+    document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
+
+    // 3. 인증 상태 감지
+    onAuthStateChanged(auth, async (user) => {
+      const userLabel = document.getElementById('userLabel');
+      const btnLogin = document.getElementById('btnLogin');
+      const btnLogout = document.getElementById('btnLogout');
+      const inputContent = document.getElementById('inputContent');
+      const btnSend = document.getElementById('btnSend');
+
+      if (user) {
+        try {
+          const snapshot = await get(child(ref(db), `accounts/${user.uid}`));
+          if (snapshot.exists()) {
+            currentUserProfile = snapshot.val();
+            userLabel.innerText = `👤 ${currentUserProfile.name}님`;
+          } else {
+            userLabel.innerText = `👤 ${user.email.split('@')[0]}님`;
+            currentUserProfile = { name: user.email.split('@')[0] };
+          }
+        } catch (e) {
+          console.error("계정 데이터 조회 실패:", e);
+          userLabel.innerText = `👤 로그인됨`;
+        }
+
+        btnLogin.classList.add('hidden');
+        btnLogout.classList.remove('hidden');
+        inputContent.disabled = false;
+        btnSend.disabled = false;
+        inputContent.placeholder = "수행평가 내용 입력 (예: 수학 3단원 형성평가)";
+      } else {
+        currentUserProfile = null;
+        userLabel.innerText = "비로그인 상태 (조회전용)";
+        btnLogin.classList.remove('hidden');
+        btnLogout.classList.add('hidden');
+        inputContent.disabled = true;
+        btnSend.disabled = true;
+        inputContent.placeholder = "로그인 후 수행평가 스케줄을 입력할 수 있습니다...";
+      }
+    });
+
+    // 4. 로그인 처리
+    window.handleLogin = async () => {
+      const name = document.getElementById('loginName').value.trim();
+      const pw = document.getElementById('loginPw').value.trim();
+      const errorEl = document.getElementById('loginError');
+
+      if (!name || !pw) {
+        errorEl.innerText = "이름과 비밀번호를 입력하세요.";
+        return;
+      }
+
+      const email = `${name}@school.jjy0205.site`;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pw);
+        closeLoginModal();
+        document.getElementById('loginName').value = '';
+        document.getElementById('loginPw').value = '';
+      } catch (err) {
+        console.error(err);
+        errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
+      }
+    };
+
+    // 5. 로그아웃
+    window.handleLogout = () => signOut(auth);
+
+    // 6. 스케줄 불러오기 및 날짜 순 정렬
+    const schedulesRef = ref(db, 'schedules');
+    onValue(schedulesRef, (snapshot) => {
+      const feed = document.getElementById('scheduleFeed');
+      feed.innerHTML = '';
+
+      if (!snapshot.exists()) {
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 20px;">등록된 수행평가 스케줄이 없습니다.</div>';
+        return;
+      }
+
+      const data = snapshot.val();
+      const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+
+      // 날짜(date) 오름차순 정렬 (빠른 날짜/마감일이 상단에 위치)
+      list.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      list.forEach(item => {
+        const card = document.createElement('div');
+        card.className = `schedule-card priority-${item.priority || 'medium'}`;
+
+        const pText = item.priority === 'high' ? '상' : item.priority === 'low' ? '하' : '보통';
+
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="badge-subject">${item.subject || '일반'}</span>
+            <span class="badge-priority ${item.priority || 'medium'}">중요도: ${pText}</span>
+            <span class="date-badge">📅 ${item.date}</span>
+          </div>
+          <div class="card-title">${item.content}</div>
+          <div class="card-footer">
+            <span>작성자: <b>${item.authorName}</b></span>
+            <span>작성일: ${item.createdAt ? item.createdAt.substring(0, 10) : ''}</span>
+          </div>
+        `;
+        feed.appendChild(card);
+      });
+    });
+
+    // 7. 스케줄 업로드
+    window.uploadSchedule = async () => {
+      const date = document.getElementById('inputDate').value;
+      const subject = document.getElementById('inputSubject').value;
+      const priority = document.getElementById('inputPriority').value;
+      const content = document.getElementById('inputContent').value.trim();
+
+      if (!date) {
+        alert("날짜를 선택하세요.");
+        return;
+      }
+
+      if (!content) {
+        alert("수행평가 내용을 입력하세요.");
+        return;
+      }
+
+      if (!auth.currentUser || !currentUserProfile) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      try {
+        await push(ref(db, 'schedules'), {
+          date: date,
+          subject: subject,
+          priority: priority,
+          content: content,
+          authorUid: auth.currentUser.uid,
+          authorName: currentUserProfile.name || "학생",
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('inputContent').value = '';
+      } catch (err) {
+        alert("업로드 실패: " + err.message);
+      }
+    };
+
+    // 모달 컨트롤
+    window.openLoginModal = () => {
+      document.getElementById('loginError').innerText = '';
+      document.getElementById('loginModal').classList.remove('hidden');
+    };
+    window.closeLoginModal = () => {
+      document.getElementById('loginModal').classList.add('hidden');
+    };
+  </script>
+</body>
+</html>
