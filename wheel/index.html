@@ -3,48 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>학급 공용 돌림판 시스템</title>
+  <title>학급 돌림판 시스템</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f6f9; color: #333; min-height: 100vh; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; color: #333; min-height: 100vh; padding: 20px; }
 
-    /* 상단 내비게이션 / 로그인 상태 바 */
-    nav { background: white; padding: 14px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; max-width: 900px; margin: 0 auto 20px auto; flex-wrap: wrap; gap: 10px; }
-    .nav-brand { font-size: 1.2rem; font-weight: bold; color: #2c3e50; }
-    .nav-actions { display: flex; gap: 10px; align-items: center; }
-    .nav-btn { padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
-    .btn-main { background-color: #4A90E2; color: white; }
-    .btn-main:hover { background-color: #357ABD; }
-    .btn-secondary { background-color: #f0f2f5; color: #333; }
-    .btn-secondary:hover { background-color: #e4e6eb; }
-    .user-badge { font-size: 0.9rem; background-color: #eef6ff; color: #4A90E2; padding: 6px 12px; border-radius: 20px; font-weight: 600; }
+    /* Header */
+    header { background-color: #4A90E2; color: white; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto 20px auto; }
+    header h1 { font-size: 1.2rem; }
+    .auth-status { font-size: 0.9rem; display: flex; gap: 10px; align-items: center; }
+    .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
+    .btn-login { background-color: white; color: #4A90E2; }
+    .btn-logout { background-color: #e74c3c; color: white; }
 
-    /* 컨테이너 */
+    /* Container */
     .container { max-width: 900px; margin: 0 auto; }
 
-    /* 모달 (로그인 / 불러오기) */
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
-    .modal h2 { margin-bottom: 16px; font-size: 1.3rem; color: #2c3e50; text-align: center; }
-
-    /* 로그인 폼 */
-    .login-toggle { display: flex; margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
-    .login-toggle button { flex: 1; padding: 10px; border: none; background: #f8f9fa; cursor: pointer; font-weight: bold; color: #666; }
-    .login-toggle button.active { background: #4A90E2; color: white; }
-
-    .form-group { margin-bottom: 14px; }
-    .form-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 6px; }
-    .form-group select, .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
-
-    /* 메인 콘텐츠 (돌림판 및 제어판) */
+    /* App Layout */
     .app-content { display: grid; grid-template-columns: 1fr; gap: 20px; }
     @media (min-width: 768px) {
       .app-content { grid-template-columns: 340px 1fr; }
     }
 
-    /* 돌림판 캔버스 */
-    .wheel-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; }
+    /* Wheel Card */
+    .wheel-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; }
     .wheel-container { position: relative; width: 300px; height: 300px; }
     .pointer { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #e74c3c; z-index: 10; }
     canvas { width: 300px; height: 300px; border-radius: 50%; }
@@ -53,43 +35,67 @@
     .btn-spin:hover { background-color: #27ae60; }
     .btn-spin:disabled { background-color: #ccc; cursor: not-allowed; }
 
-    /* 제어 패널 */
-    .control-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 16px; }
+    /* Control Panel */
+    .control-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 16px; }
+    
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 0.85rem; font-weight: bold; color: #555; }
+    .form-group select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; outline: none; }
+
     .mode-selector { display: flex; gap: 8px; }
     .mode-btn { flex: 1; padding: 8px; border: 1px solid #4A90E2; background: white; color: #4A90E2; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .mode-btn.active { background: #4A90E2; color: white; }
 
-    .student-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 6px; max-height: 180px; overflow-y: auto; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
-    .student-chip { padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.85rem; cursor: pointer; user-select: none; }
+    .select-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .btn-small { padding: 4px 8px; font-size: 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-small:hover { background: #f0f0f0; }
+
+    .student-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 6px; max-height: 150px; overflow-y: auto; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
+    .student-chip { padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.8rem; cursor: pointer; user-select: none; }
     .student-chip.selected { background: #4A90E2; color: white; border-color: #4A90E2; }
+
+    .option-box { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
+    .option-box input { width: 16px; height: 16px; cursor: pointer; }
 
     .result-display { background: #eef6ff; padding: 12px; border-radius: 8px; text-align: center; }
     .result-display h4 { font-size: 0.85rem; color: #4A90E2; margin-bottom: 4px; }
     .result-display .winner { font-size: 1.2rem; font-weight: bold; color: #2c3e50; }
 
-    /* 목록 불러오기 리스트 */
-    .load-list { list-style: none; max-height: 200px; overflow-y: auto; margin-bottom: 16px; }
-    .load-list li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .load-list li:hover { background-color: #f8f9fa; }
+    .btn-action-group { display: flex; gap: 8px; margin-top: auto; }
+    .btn-main { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background-color: #4A90E2; color: white; }
+    .btn-main:hover { background-color: #357ABD; }
+    .btn-secondary { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-weight: bold; cursor: pointer; background-color: white; color: #333; }
+    .btn-secondary:hover { background-color: #f8f9fa; }
+
+    /* Modals */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; color: #2c3e50; }
+    .modal-content input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+    .modal-content button { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .hidden { display: none !important; }
+    .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
+
+    .load-list { list-style: none; max-height: 240px; overflow-y: auto; }
+    .load-list li { padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .load-list li:hover { background-color: #f0f7ff; }
   </style>
 </head>
 <body>
 
-  <!-- 상단 바 -->
-  <nav>
-    <div class="nav-brand">🎡 클래스 돌림판</div>
-    <div class="nav-actions">
-      <button class="nav-btn btn-secondary" onclick="handleMenuClick('create')">돌림판 만들기</button>
-      <button class="nav-btn btn-secondary" onclick="handleMenuClick('load')">돌림판 불러오기</button>
-      <div id="userInfo" style="display: none;" class="user-badge"></div>
-      <button id="authBtn" class="nav-btn btn-main" onclick="openLoginModal()">로그인</button>
+  <!-- Header -->
+  <header>
+    <h1>🎡 학급 돌림판</h1>
+    <div class="auth-status">
+      <span id="userLabel">비로그인 상태 (조회전용)</span>
+      <button id="btnLogin" class="btn-sm btn-login" onclick="openLoginModal()">로그인</button>
+      <button id="btnLogout" class="btn-sm btn-logout hidden" onclick="handleLogout()">로그아웃</button>
     </div>
-  </nav>
+  </header>
 
   <div class="container">
-    <!-- 메인 돌림판 영역 -->
     <div class="app-content">
-      <!-- 돌림판 시각화 -->
+      <!-- 돌림판 Visual -->
       <div class="wheel-card">
         <div class="wheel-container">
           <div class="pointer"></div>
@@ -98,15 +104,34 @@
         <button id="btnSpin" class="btn-spin" onclick="spinWheel()">돌리기!</button>
       </div>
 
-      <!-- 돌림판 설정 & 모드 선택 -->
+      <!-- 제어 및 설정 패널 -->
       <div class="control-card">
         <div class="result-display">
           <h4>당첨 결과</h4>
           <div id="resultText" class="winner">대기 중...</div>
         </div>
 
+        <!-- 과목 선택 (스케줄표 과목 기준, 안내사항 제외) -->
+        <div class="form-group">
+          <label for="subjectSelect">과목 선택</label>
+          <select id="subjectSelect">
+            <option value="국어">국어</option>
+            <option value="수학">수학</option>
+            <option value="영어">영어</option>
+            <option value="과학">과학</option>
+            <option value="사회">사회</option>
+            <option value="도덕">도덕</option>
+            <option value="정보">정보</option>
+            <option value="진로">진로</option>
+            <option value="진로탐구">진로탐구</option>
+            <option value="음악">음악</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+
+        <!-- 회전 모드 설정 -->
         <div>
-          <label style="font-size: 0.9rem; font-weight: bold; display: block; margin-bottom: 8px;">회전 모드 설정</label>
+          <label style="font-size: 0.85rem; font-weight: bold; color: #555; display: block; margin-bottom: 6px;">회전 인원 설정</label>
           <div class="mode-selector">
             <button id="modeAllBtn" class="mode-btn active" onclick="setMode('all')">전체 학생 (28명)</button>
             <button id="modeSelectBtn" class="mode-btn" onclick="setMode('select')">선택 학생</button>
@@ -115,66 +140,74 @@
 
         <!-- 선택 학생 모드 전용 영역 -->
         <div id="studentSelectSection" style="display: none;">
-          <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 6px;">참여할 학생 번호를 선택하세요</label>
+          <div class="select-controls">
+            <label style="font-size: 0.8rem; color: #666;">참여 학생 선택</label>
+            <div>
+              <button class="btn-small" onclick="selectAllStudents(true)">전체 선택</button>
+              <button class="btn-small" onclick="selectAllStudents(false)">전체 해제</button>
+            </div>
+          </div>
           <div id="studentGrid" class="student-select-grid"></div>
         </div>
 
-        <button class="nav-btn btn-main" style="margin-top: auto;" onclick="saveCurrentWheel()">현재 돌림판 저장하기</button>
+        <!-- 당첨자 자동 제외 옵션 -->
+        <div class="option-box">
+          <input type="checkbox" id="removeWinnerCheck" onchange="toggleRemoveWinnerOption(this.checked)">
+          <label for="removeWinnerCheck">당첨된 학생 목록에서 즉시 제외하기</label>
+        </div>
+
+        <!-- 저장 / 불러오기 버튼 그룹 -->
+        <div class="btn-action-group">
+          <button class="btn-main" onclick="saveCurrentWheel()">현재 돌림판 저장하기</button>
+          <button class="btn-secondary" onclick="openLoadModal()">돌림판 불러오기</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- 1. 로그인 모달 -->
-  <div id="loginModal" class="modal-overlay">
-    <div class="modal">
-      <h2>시스템 로그인</h2>
-      <div class="login-toggle">
-        <button id="tabTeacher" class="active" onclick="switchLoginTab('teacher')">교사 로그인</button>
-        <button id="tabStudent" onclick="switchLoginTab('student')">학생 로그인</button>
-      </div>
-
-      <!-- 교사 로그인 폼 -->
-      <div id="teacherForm">
-        <div class="form-group">
-          <label>과목 선택</label>
-          <select id="subjectSelect">
-            <option value="국어">국어</option>
-            <option value="음악">음악</option>
-            <option value="진로 탐색">진로 탐색</option>
-            <option value="수학">수학</option>
-            <option value="영어">영어</option>
-            <option value="과학">과학</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- 학생 로그인 폼 -->
-      <div id="studentForm" style="display: none;">
-        <div class="form-group">
-          <label>학생 번호 (1~28번)</label>
-          <input type="number" id="studentNumInput" min="1" max="28" placeholder="예: 15">
-        </div>
-      </div>
-
-      <button class="btn-spin" style="margin-top: 10px;" onclick="submitLogin()">확인</button>
+  <!-- 스케줄표와 동일한 로그인 모달 -->
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>학생 로그인</h2>
+      <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <div id="loginError" class="error-msg"></div>
+      <button onclick="handleLogin()">로그인</button>
+      <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
     </div>
   </div>
 
-  <!-- 2. 돌림판 불러오기 모달 -->
-  <div id="loadModal" class="modal-overlay">
-    <div class="modal">
-      <h2>저장된 돌림판 불러오기</h2>
+  <!-- 불러오기 모달 -->
+  <div id="loadModal" class="modal hidden">
+    <div class="modal-content" style="width: 360px;">
+      <h2>내 저장된 돌림판 목록</h2>
       <ul id="loadList" class="load-list"></ul>
-      <button class="nav-btn btn-secondary" style="width: 100%;" onclick="closeModal('loadModal')">닫기</button>
+      <button onclick="closeLoadModal()" style="background-color: #888; margin-top: 10px;">닫기</button>
     </div>
   </div>
 
   <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      onValue, 
+      update, 
+      get, 
+      child 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // TODO: 본인의 Firebase 프로젝트 설정 정보를 넣으세요.
+    // Firebase Config (본인 키 입력)
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -185,89 +218,107 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const db = getDatabase(app, firebaseConfig.databaseURL);
+
+    setPersistence(auth, browserLocalPersistence);
 
     const TOTAL_STUDENTS = 28;
     const COLORS = ["#f39c12", "#e74c3c", "#9b59b6", "#3498db", "#2ecc71", "#1abc9c", "#e67e22", "#34495e"];
 
-    // 앱 상태 variables
-    let currentUser = null; // { role: 'teacher'|'student', detail: 과목명 or 번호 }
-    let loginTab = 'teacher';
-    let currentMode = 'all'; // 'all' or 'select'
-    let selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1)); // 기본 전체
+    let currentUserProfile = null;
+    let currentMode = 'all';
+    let removeWinnerOnSpin = false;
+
+    let selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1));
     let currentItems = Array.from({length: TOTAL_STUDENTS}, (_, i) => `${i + 1}번`);
     let currentRotation = 0;
     let isSpinning = false;
 
     const canvas = document.getElementById("wheelCanvas");
     const ctx = canvas.getContext("2d");
-    const wheelRef = ref(db, "shared_roulette");
+    const sharedRef = ref(db, "shared_roulette");
 
-    // 1. Firebase 실시간 데이터 구독 (동기화)
-    onValue(wheelRef, (snapshot) => {
+    // 인증 상태 감지 (스케줄러 동일 로직)
+    onAuthStateChanged(auth, async (user) => {
+      const userLabel = document.getElementById('userLabel');
+      const btnLogin = document.getElementById('btnLogin');
+      const btnLogout = document.getElementById('btnLogout');
+
+      if (user) {
+        try {
+          const snapshot = await get(child(ref(db), `accounts/${user.uid}`));
+          if (snapshot.exists()) {
+            currentUserProfile = snapshot.val();
+            userLabel.innerText = `👤 ${currentUserProfile.name}님`;
+          } else {
+            const fallbackName = user.email.split('@')[0];
+            userLabel.innerText = `👤 ${fallbackName}님`;
+            currentUserProfile = { name: fallbackName };
+          }
+        } catch (e) {
+          console.error("계정 데이터 조회 실패:", e);
+          userLabel.innerText = `👤 로그인됨`;
+        }
+
+        btnLogin.classList.add('hidden');
+        btnLogout.classList.remove('hidden');
+      } else {
+        currentUserProfile = null;
+        userLabel.innerText = "비로그인 상태 (조회전용)";
+        btnLogin.classList.remove('hidden');
+        btnLogout.classList.add('hidden');
+      }
+    });
+
+    // 로그인 처리
+    window.handleLogin = async () => {
+      const name = document.getElementById('loginName').value.trim();
+      const pw = document.getElementById('loginPw').value.trim();
+      const errorEl = document.getElementById('loginError');
+
+      if (!name || !pw) {
+        errorEl.innerText = "이름과 비밀번호를 입력하세요.";
+        return;
+      }
+
+      const email = `${name}@school.jjy0205.site`;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pw);
+        closeLoginModal();
+        document.getElementById('loginName').value = '';
+        document.getElementById('loginPw').value = '';
+      } catch (err) {
+        console.error(err);
+        errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
+      }
+    };
+
+    window.handleLogout = () => signOut(auth);
+
+    // 모달 관리
+    window.openLoginModal = () => {
+      document.getElementById('loginError').innerText = '';
+      document.getElementById('loginModal').classList.remove('hidden');
+    };
+    window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
+    window.closeLoadModal = () => document.getElementById('loadModal').classList.add('hidden');
+
+    // 실시간 공유 상태 구독
+    onValue(sharedRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         currentItems = data.items || [];
         currentRotation = data.rotation || 0;
+        removeWinnerOnSpin = !!data.removeWinnerOnSpin;
+        document.getElementById("removeWinnerCheck").checked = removeWinnerOnSpin;
         document.getElementById("resultText").innerText = data.lastResult || "대기 중...";
         drawWheel();
       }
     });
 
-    // 2. 인증 & 메뉴 제어
-    window.handleMenuClick = (action) => {
-      if (!currentUser) {
-        openLoginModal();
-        return;
-      }
-      if (action === 'create') {
-        alert("현재 화면에서 모드(전체/선택)를 설정한 뒤 '현재 돌림판 저장하기'를 누르면 생성됩니다.");
-      } else if (action === 'load') {
-        openLoadModal();
-      }
-    };
-
-    window.openLoginModal = () => document.getElementById("loginModal").classList.add("active");
-    window.closeModal = (id) => document.getElementById(id).classList.remove("active");
-
-    window.switchLoginTab = (tab) => {
-      loginTab = tab;
-      document.getElementById("tabTeacher").classList.toggle("active", tab === 'teacher');
-      document.getElementById("tabStudent").classList.toggle("active", tab === 'student');
-      document.getElementById("teacherForm").style.display = tab === 'teacher' ? 'block' : 'none';
-      document.getElementById("studentForm").style.display = tab === 'student' ? 'block' : 'none';
-    };
-
-    window.submitLogin = () => {
-      if (loginTab === 'teacher') {
-        const subject = document.getElementById("subjectSelect").value;
-        currentUser = { role: '교사', detail: subject };
-      } else {
-        const num = document.getElementById("studentNumInput").value;
-        if (!num || num < 1 || num > TOTAL_STUDENTS) {
-          alert("1번부터 28번 사이의 번호를 입력해주세요.");
-          return;
-        }
-        currentUser = { role: '학생', detail: `${num}번` };
-      }
-
-      // UI 반영
-      document.getElementById("userInfo").innerText = `[${currentUser.role}] ${currentUser.detail}`;
-      document.getElementById("userInfo").style.display = "inline-block";
-      document.getElementById("authBtn").innerText = "로그아웃";
-      document.getElementById("authBtn").onclick = logout;
-
-      closeModal("loginModal");
-    };
-
-    function logout() {
-      currentUser = null;
-      document.getElementById("userInfo").style.display = "none";
-      document.getElementById("authBtn").innerText = "로그인";
-      document.getElementById("authBtn").onclick = openLoginModal;
-    }
-
-    // 3. 학생 선택 및 모드 변경
+    // 인원 제어
     window.setMode = (mode) => {
       currentMode = mode;
       document.getElementById("modeAllBtn").classList.toggle("active", mode === 'all');
@@ -275,8 +326,19 @@
       document.getElementById("studentSelectSection").style.display = mode === 'select' ? 'block' : 'none';
 
       if (mode === 'all') {
-        selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1));
+        selectAllStudents(true);
+      } else {
+        renderStudentGrid();
       }
+    };
+
+    window.selectAllStudents = (selectAll) => {
+      if (selectAll) {
+        selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1));
+      } else {
+        selectedStudents.clear();
+      }
+      renderStudentGrid();
       updateItemsFromSelection();
     };
 
@@ -289,10 +351,6 @@
         chip.innerText = `${i}번`;
         chip.onclick = () => {
           if (selectedStudents.has(i)) {
-            if (selectedStudents.size <= 2) {
-              alert("최소 2명 이상 선택해야 합니다.");
-              return;
-            }
             selectedStudents.delete(i);
           } else {
             selectedStudents.add(i);
@@ -308,10 +366,15 @@
       const sorted = Array.from(selectedStudents).sort((a, b) => a - b);
       currentItems = sorted.map(num => `${num}번`);
       drawWheel();
-      saveStateToFirebase();
+      saveSharedState();
     }
 
-    // 4. 돌림판 그리기
+    window.toggleRemoveWinnerOption = (checked) => {
+      removeWinnerOnSpin = checked;
+      saveSharedState();
+    };
+
+    // 돌림판 그리기
     function drawWheel() {
       const numItems = currentItems.length;
       const centerX = canvas.width / 2;
@@ -320,7 +383,13 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (numItems === 0) return;
+      if (numItems === 0) {
+        ctx.fillStyle = "#888";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("남은 학생이 없습니다.", centerX, centerY);
+        return;
+      }
 
       const arcSize = (Math.PI * 2) / numItems;
 
@@ -350,13 +419,14 @@
       ctx.restore();
     }
 
-    // 5. 회전 실행
+    // 회전
     window.spinWheel = () => {
-      if (!currentUser) {
-        openLoginModal();
+      if (!auth.currentUser) { openLoginModal(); return; }
+      if (isSpinning) return;
+      if (currentItems.length === 0) {
+        alert("돌릴 수 있는 학생이 없습니다.");
         return;
       }
-      if (isSpinning || currentItems.length === 0) return;
 
       isSpinning = true;
       document.getElementById("btnSpin").disabled = true;
@@ -390,60 +460,109 @@
           const winner = currentItems[winningIndex];
           document.getElementById("resultText").innerText = `🎉 ${winner}`;
 
-          saveStateToFirebase(winner);
+          if (removeWinnerOnSpin) {
+            currentItems.splice(winningIndex, 1);
+          }
+
+          saveSharedState(winner);
         }
       }
 
       requestAnimationFrame(animate);
     };
 
-    // Firebase 연동 함수
-    function saveStateToFirebase(lastResult = null) {
+    function saveSharedState(lastResult = null) {
       const payload = {
         items: currentItems,
-        rotation: currentRotation
+        rotation: currentRotation,
+        removeWinnerOnSpin: removeWinnerOnSpin
       };
       if (lastResult !== null) payload.lastResult = lastResult;
-      update(wheelRef, payload);
+      update(sharedRef, payload);
     }
 
-    window.saveCurrentWheel = () => {
-      if (!currentUser) { openLoginModal(); return; }
-      const name = prompt("저장할 돌림판 이름을 입력하세요:", `${currentUser.detail} 돌림판`);
-      if (!name) return;
+    // [과목] [날짜] 돌림판 저장하기
+    window.saveCurrentWheel = async () => {
+      if (!auth.currentUser) {
+        alert("로그인이 필요합니다.");
+        openLoginModal();
+        return;
+      }
 
-      const presetsRef = ref(db, `wheel_presets/${name}`);
-      set(presetsRef, {
-        items: currentItems,
-        createdAt: new Date().toISOString(),
-        createdBy: `${currentUser.role} (${currentUser.detail})`
-      });
-      alert("성공적으로 저장되었습니다!");
+      const subject = document.getElementById("subjectSelect").value;
+      const today = new Date().toISOString().substring(0, 10);
+      const wheelTitle = `[${subject}] [${today}] 돌림판`;
+
+      if (!confirm(`'${wheelTitle}' 이름으로 현재 돌림판을 저장하시겠습니까?`)) {
+        return;
+      }
+
+      const userWheelRef = ref(db, `user_wheels/${auth.currentUser.uid}/${wheelTitle.replace(/[.#$[\]]/g, "_")}`);
+      
+      try {
+        await set(userWheelRef, {
+          title: wheelTitle,
+          subject: subject,
+          items: currentItems,
+          rotation: currentRotation,
+          mode: currentMode,
+          removeWinnerOnSpin: removeWinnerOnSpin,
+          authorUid: auth.currentUser.uid,
+          authorName: currentUserProfile ? currentUserProfile.name : "학생",
+          createdAt: new Date().toISOString()
+        });
+        alert("성공적으로 저장되었습니다!");
+      } catch (err) {
+        alert("저장 실패: " + err.message);
+      }
     };
 
-    window.openLoadModal = () => {
-      const presetsRef = ref(db, "wheel_presets");
-      get(presetsRef).then((snapshot) => {
+    // 자기 이름으로 저장된 돌림판 불러오기
+    window.openLoadModal = async () => {
+      if (!auth.currentUser) {
+        alert("로그인이 필요합니다.");
+        openLoginModal();
+        return;
+      }
+
+      const userSavedRef = ref(db, `user_wheels/${auth.currentUser.uid}`);
+      try {
+        const snapshot = await get(userSavedRef);
         const listEl = document.getElementById("loadList");
         listEl.innerHTML = "";
+
         if (snapshot.exists()) {
           const data = snapshot.val();
           Object.keys(data).forEach((key) => {
+            const item = data[key];
             const li = document.createElement("li");
-            li.innerHTML = `<strong>${key}</strong> <span style="font-size: 0.8rem; color: #888;">${data[key].createdBy}</span>`;
+            li.innerHTML = `
+              <strong>${item.title}</strong>
+              <div style="font-size: 0.75rem; color: #888;">남은 인원: ${item.items ? item.items.length : 0}명 | 저장일: ${item.createdAt ? item.createdAt.substring(0, 10) : ''}</div>
+            `;
             li.onclick = () => {
-              currentItems = data[key].items;
+              currentItems = item.items || [];
+              currentRotation = item.rotation || 0;
+              removeWinnerOnSpin = !!item.removeWinnerOnSpin;
+              document.getElementById("removeWinnerCheck").checked = removeWinnerOnSpin;
+              if (item.subject) {
+                document.getElementById("subjectSelect").value = item.subject;
+              }
+
+              setMode(item.mode || 'all');
               drawWheel();
-              saveStateToFirebase();
-              closeModal("loadModal");
+              saveSharedState();
+              closeLoadModal();
             };
             listEl.appendChild(li);
           });
         } else {
-          listEl.innerHTML = "<li>저장된 돌림판이 없습니다.</li>";
+          listEl.innerHTML = "<li style='text-align:center; color:#999; padding: 20px 0;'>저장된 돌림판이 없습니다.</li>";
         }
-        document.getElementById("loadModal").classList.add("active");
-      });
+        document.getElementById("loadModal").classList.remove("hidden");
+      } catch (err) {
+        alert("목록 불러오기 실패: " + err.message);
+      }
     };
 
     // 초기화
