@@ -118,7 +118,7 @@
     <div class="modal-content">
       <h2>학생 로그인</h2>
       <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
-      <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <input type="password" id="loginPw" placeholder="비밀번호 (기본: 123456)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <div id="loginError" class="error-msg"></div>
       <button onclick="handleLogin()">로그인</button>
       <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
