@@ -20,7 +20,7 @@
     main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
     
     /* Schedule Cards (Message style) */
-    .schedule-card { background-color: white; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%; max-width: 500px; }
+    .schedule-card { background-color: white; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%; max-width: 500px; position: relative; }
     
     /* 중요도별 테두리 색상 */
     .schedule-card.priority-crazy { border-left: 5px solid #9b59b6; }
@@ -43,7 +43,11 @@
     .date-badge { margin-left: auto; font-weight: bold; color: #2c3e50; background: #eef6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #d0e3ff; }
     
     .card-title { font-size: 1rem; color: #2c3e50; margin: 8px 0; word-break: break-all; line-height: 1.4; }
-    .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
+    .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
+
+    /* 삭제 버튼 스타일 */
+    .btn-delete { background: none; border: none; color: #e74c3c; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .btn-delete:hover { background-color: #fbeae8; }
 
     /* Input Bar (Messenger Bar) */
     .input-bar { background-color: white; border-top: 1px solid #ddd; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
@@ -118,7 +122,7 @@
     <div class="modal-content">
       <h2>학생 로그인</h2>
       <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
-      <input type="password" id="loginPw" placeholder="비밀번호 (기본: 123456)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <div id="loginError" class="error-msg"></div>
       <button onclick="handleLogin()">로그인</button>
       <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
@@ -140,17 +144,18 @@
       getDatabase, 
       ref, 
       push, 
+      update,
       onValue, 
       get, 
       child 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // 1. URL Path를 /scheduler 로 고정
-    if (window.location.pathname !== '/scheduler') {
+    // 1. URL Path 고정 (필요시 활성화)
+    if (window.location.protocol !== 'file:' && window.location.pathname !== '/scheduler') {
       history.replaceState(null, '', '/scheduler');
     }
 
-    // 2. Firebase 설정 (본인의 키 정보로 교체하세요)
+    // 2. Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -167,11 +172,10 @@
     setPersistence(auth, browserLocalPersistence);
 
     let currentUserProfile = null;
+    let cachedSchedules = null; // 로그인 변경 시 UI 재갱신용 캐시
 
-    // 오늘 날짜를 기본값으로 세팅
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 
-    // XSS 방지용 이스케이프 함수
     function escapeHtml(text) {
       return String(text || '')
         .replace(/&/g, "&amp;")
@@ -181,7 +185,6 @@
         .replace(/'/g, "&#039;");
     }
 
-    // 중요도 텍스트 매핑 함수
     function getPriorityText(priority) {
       switch(priority) {
         case 'crazy': return '어마무시함';
@@ -231,9 +234,14 @@
         btnSend.disabled = true;
         inputContent.placeholder = "로그인 후 수행평가 스케줄을 입력할 수 있습니다...";
       }
+
+      // 로그인/로그아웃 상태에 따라 버튼 표시 여부 업데이트
+      if (cachedSchedules) {
+        renderSchedules(cachedSchedules);
+      }
     });
 
-    // 4. 로그인 처리
+    // 4. 로그인
     window.handleLogin = async () => {
       const name = document.getElementById('loginName').value.trim();
       const pw = document.getElementById('loginPw').value.trim();
@@ -260,29 +268,43 @@
     // 5. 로그아웃
     window.handleLogout = () => signOut(auth);
 
-    // 6. 스케줄 불러오기 및 날짜 순 정렬
-    const schedulesRef = ref(db, 'schedules');
-    onValue(schedulesRef, (snapshot) => {
+    // 6. 스케줄 화면 렌더링 함수
+    function renderSchedules(snapshotValue) {
       const feed = document.getElementById('scheduleFeed');
       feed.innerHTML = '';
 
-      if (!snapshot.exists()) {
+      if (!snapshotValue) {
         feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 20px;">등록된 수행평가 스케줄이 없습니다.</div>';
         return;
       }
 
-      const data = snapshot.val();
-      const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+      const list = Object.keys(snapshotValue).map(key => ({ id: key, ...snapshotValue[key] }));
 
-      // 날짜(date) 오름차순 정렬 (빠른 날짜/마감일이 상단에 위치)
-      list.sort((a, b) => new Date(a.date) - new Date(b.date));
+      // 1) 삭제된 스케줄 제외 (소프트 삭제 필터링)
+      const visibleList = list.filter(item => !item.deleted);
 
-      list.forEach(item => {
+      if (visibleList.length === 0) {
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 20px;">등록된 수행평가 스케줄이 없습니다.</div>';
+        return;
+      }
+
+      // 2) 마감 날짜순 오름차순 정렬
+      visibleList.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      const currentUid = auth.currentUser ? auth.currentUser.uid : null;
+
+      visibleList.forEach(item => {
         const card = document.createElement('div');
         const priorityClass = item.priority || 'medium';
         card.className = `schedule-card priority-${priorityClass}`;
 
         const pText = getPriorityText(priorityClass);
+
+        // 작성자 본인일 때만 삭제 버튼 활성화
+        const isAuthor = currentUid && currentUid === item.authorUid;
+        const deleteBtnHtml = isAuthor 
+          ? `<button class="btn-delete" onclick="deleteSchedule('${item.id}', '${item.authorUid}')">🗑️ 삭제</button>`
+          : '';
 
         card.innerHTML = `
           <div class="card-header">
@@ -293,14 +315,52 @@
           <div class="card-title">${escapeHtml(item.content)}</div>
           <div class="card-footer">
             <span>작성자: <b>${escapeHtml(item.authorName)}</b></span>
-            <span>작성일: ${item.createdAt ? escapeHtml(item.createdAt.substring(0, 10)) : ''}</span>
+            <div>
+              <span style="margin-right: 8px;">작성일: ${item.createdAt ? escapeHtml(item.createdAt.substring(0, 10)) : ''}</span>
+              ${deleteBtnHtml}
+            </div>
           </div>
         `;
         feed.appendChild(card);
       });
+    }
+
+    // 7. DB 감시
+    const schedulesRef = ref(db, 'schedules');
+    onValue(schedulesRef, (snapshot) => {
+      cachedSchedules = snapshot.exists() ? snapshot.val() : null;
+      renderSchedules(cachedSchedules);
     });
 
-    // 7. 스케줄 업로드
+    // 8. 스케줄 삭제 (소프트 삭제 처리)
+    window.deleteSchedule = async (scheduleId, authorUid) => {
+      if (!auth.currentUser) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      if (auth.currentUser.uid !== authorUid) {
+        alert("본인이 작성한 스케줄만 삭제할 수 있습니다.");
+        return;
+      }
+
+      if (!confirm("정말 이 스케줄을 삭제하시겠습니까?")) {
+        return;
+      }
+
+      try {
+        // 실제 데이터를 삭제하는 대신 삭제 기록 정보로 업데이트합니다.
+        await update(ref(db, `schedules/${scheduleId}`), {
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: auth.currentUser.uid
+        });
+      } catch (err) {
+        alert("삭제 실패: " + err.message);
+      }
+    };
+
+    // 9. 스케줄 업로드
     window.uploadSchedule = async () => {
       const date = document.getElementById('inputDate').value;
       const subject = document.getElementById('inputSubject').value;
@@ -330,7 +390,8 @@
           content: content,
           authorUid: auth.currentUser.uid,
           authorName: currentUserProfile.name || "학생",
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          deleted: false // 기본값은 false
         });
 
         document.getElementById('inputContent').value = '';
