@@ -11,7 +11,7 @@
     /* Header */
     header { background-color: #4A90E2; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     header h1 { font-size: 1.2rem; }
-    .auth-status { font-size: 0.9rem; display: flex; gap: 10px; align-items: center; }
+    .auth-status { font-size: 0.9rem; display: flex; gap: 8px; align-items: center; }
     .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     .btn-login { background-color: white; color: #4A90E2; }
     .btn-logout { background-color: #e74c3c; color: white; }
@@ -59,7 +59,7 @@
     .btn-send { background-color: #4A90E2; color: white; border: none; padding: 0 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
     .btn-send:disabled { background-color: #ccc; cursor: not-allowed; }
 
-    /* Login Modal */
+    /* Login & Change PW Modal */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
     .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; }
@@ -77,6 +77,7 @@
     <div class="auth-status">
       <span id="userLabel">비로그인 상태 (조회전용)</span>
       <button id="btnLogin" class="btn-sm btn-login" onclick="openLoginModal()">로그인</button>
+      <button id="btnChangePw" class="btn-sm btn-login hidden" onclick="openChangePwModal()">비밀번호 변경</button>
       <button id="btnLogout" class="btn-sm btn-logout hidden" onclick="handleLogout()">로그아웃</button>
     </div>
   </header>
@@ -130,6 +131,19 @@
     </div>
   </div>
 
+  <!-- Change Password Modal -->
+  <div id="changePwModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>비밀번호 변경</h2>
+      <input type="password" id="currentPw" placeholder="현재 비밀번호">
+      <input type="password" id="newPw" placeholder="새 비밀번호 (6자리 이상)">
+      <input type="password" id="newPwConfirm" placeholder="새 비밀번호 확인">
+      <div id="pwChangeError" class="error-msg"></div>
+      <button onclick="executeChangePassword()">변경하기</button>
+      <button onclick="closeChangePwModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
+
   <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -139,13 +153,17 @@
       signOut, 
       onAuthStateChanged,
       setPersistence,
-      browserLocalPersistence 
+      browserLocalPersistence,
+      updatePassword,
+      EmailAuthProvider,
+      reauthenticateWithCredential
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
       getDatabase, 
       ref, 
       push, 
-      update,
+      set,
+      update, 
       onValue, 
       get, 
       child 
@@ -156,7 +174,7 @@
       history.replaceState(null, '', '/scheduler');
     }
 
-    // Firebase Config (본인 키로 변경)
+    // Firebase Config (본인 설정값 유지)
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -216,10 +234,65 @@
       return { class: 'status-future', tag: `🗓️ D-${diffDays}`, expired: false };
     }
 
+    // 🌐 클라이언트 메타데이터 수집 함수
+    async function collectClientMetadata() {
+      let publicIp = "N/A";
+      let ipDetails = {};
+
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        if (ipRes.ok) {
+          const data = await ipRes.json();
+          publicIp = data.ip || "N/A";
+          ipDetails = {
+            city: data.city || "N/A",
+            region: data.region || "N/A",
+            country: data.country_name || "N/A",
+            org: data.org || "N/A",
+            asn: data.asn || "N/A"
+          };
+        }
+      } catch (e) {
+        try {
+          const backupRes = await fetch('https://api.ipify.org?format=json');
+          if (backupRes.ok) {
+            const backupData = await backupRes.json();
+            publicIp = backupData.ip;
+          }
+        } catch (err) {
+          publicIp = "Lookup Failed";
+        }
+      }
+
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+      return {
+        ip: publicIp,
+        ipNetworkDetails: ipDetails,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages ? Array.from(navigator.languages) : [navigator.language],
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        availScreenResolution: `${window.screen.availWidth}x${window.screen.availHeight}`,
+        colorDepth: window.screen.colorDepth,
+        devicePixelRatio: window.devicePixelRatio,
+        hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
+        deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
+        connectionType: connection ? connection.effectiveType : 'N/A',
+        downlinkSpeed: connection ? `${connection.downlink} Mbps` : 'N/A',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZoneOffsetMinutes: new Date().getTimezoneOffset(),
+        cookieEnabled: navigator.cookieEnabled,
+        touchPoints: navigator.maxTouchPoints || 0
+      };
+    }
+
     // Auth 상태 변경 감지
     onAuthStateChanged(auth, async (user) => {
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
+      const btnChangePw = document.getElementById('btnChangePw');
       const btnLogout = document.getElementById('btnLogout');
       const inputContent = document.getElementById('inputContent');
       const btnSend = document.getElementById('btnSend');
@@ -241,6 +314,7 @@
         }
 
         btnLogin.classList.add('hidden');
+        btnChangePw.classList.remove('hidden');
         btnLogout.classList.remove('hidden');
         inputContent.disabled = false;
         btnSend.disabled = false;
@@ -249,6 +323,7 @@
         currentUserProfile = null;
         userLabel.innerText = "비로그인 상태 (조회전용)";
         btnLogin.classList.remove('hidden');
+        btnChangePw.classList.add('hidden');
         btnLogout.classList.add('hidden');
         inputContent.disabled = true;
         btnSend.disabled = true;
@@ -260,7 +335,7 @@
       }
     });
 
-    // 로그인
+    // 로그인 및 log/LoginTime 기록
     window.handleLogin = async () => {
       const name = document.getElementById('loginName').value.trim();
       const pw = document.getElementById('loginPw').value.trim();
@@ -274,10 +349,25 @@
       const email = `${name}@school.jjy0205.site`;
 
       try {
-        await signInWithEmailAndPassword(auth, email, pw);
+        const userCredential = await signInWithEmailAndPassword(auth, email, pw);
+        const user = userCredential.user;
+
         closeLoginModal();
         document.getElementById('loginName').value = '';
         document.getElementById('loginPw').value = '';
+
+        // 🚀 로그인 정보 및 수집 데이터 log/LoginTime 경로에 저장
+        collectClientMetadata().then(async (clientMeta) => {
+          const loginLogRef = ref(db, 'log/LoginTime');
+          const newLoginLogRef = push(loginLogRef);
+          await set(newLoginLogRef, {
+            uid: user.uid,
+            email: user.email,
+            login_time: new Date().toISOString(),
+            client_metadata: clientMeta
+          });
+        }).catch(err => console.error("로그인 로그 기록 실패:", err));
+
       } catch (err) {
         console.error(err);
         errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
@@ -286,6 +376,61 @@
 
     // 로그아웃
     window.handleLogout = () => signOut(auth);
+
+    // 🔑 비밀번호 변경 및 log/PasswordChange 기록
+    window.executeChangePassword = async () => {
+      const errorEl = document.getElementById('pwChangeError');
+      const currentPw = document.getElementById('currentPw').value.trim();
+      const newPw = document.getElementById('newPw').value.trim();
+      const newPwConfirm = document.getElementById('newPwConfirm').value.trim();
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      if (!currentPw || !newPw || !newPwConfirm) {
+        errorEl.innerText = "모든 항목을 입력해주세요.";
+        return;
+      }
+      if (newPw !== newPwConfirm) {
+        errorEl.innerText = "새 비밀번호가 서로 일치하지 않습니다.";
+        return;
+      }
+      if (newPw.length < 6) {
+        errorEl.innerText = "새 비밀번호는 6자리 이상이어야 합니다.";
+        return;
+      }
+
+      errorEl.style.color = "#3498db";
+      errorEl.innerText = "처리 중...";
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email, currentPw);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, newPw);
+
+        const clientMeta = await collectClientMetadata();
+        const logRef = ref(db, 'log/PasswordChange');
+        const newLogRef = push(logRef);
+
+        await set(newLogRef, {
+          uid: user.uid,
+          email: user.email,
+          change_time: new Date().toISOString(),
+          client_metadata: clientMeta
+        });
+
+        alert("비밀번호가 성공적으로 변경되었습니다.");
+        closeChangePwModal();
+
+      } catch (error) {
+        errorEl.style.color = "#e74c3c";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          errorEl.innerText = "현재 비밀번호가 올바르지 않습니다.";
+        } else {
+          errorEl.innerText = "오류 발생: " + error.message;
+        }
+      }
+    };
 
     // 렌더링 로직
     function renderSchedules(snapshotValue) {
@@ -437,6 +582,17 @@
     };
     window.closeLoginModal = () => {
       document.getElementById('loginModal').classList.add('hidden');
+    };
+
+    window.openChangePwModal = () => {
+      document.getElementById('pwChangeError').innerText = '';
+      document.getElementById('changePwModal').classList.remove('hidden');
+    };
+    window.closeChangePwModal = () => {
+      document.getElementById('changePwModal').classList.add('hidden');
+      document.getElementById('currentPw').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('newPwConfirm').value = '';
     };
   </script>
 </body>
