@@ -18,12 +18,8 @@
 
     /* Container */
     .container { max-width: 900px; margin: 0 auto; }
-
-    /* App Layout */
     .app-content { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    @media (min-width: 768px) {
-      .app-content { grid-template-columns: 340px 1fr; }
-    }
+    @media (min-width: 768px) { .app-content { grid-template-columns: 340px 1fr; } }
 
     /* Wheel Card */
     .wheel-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; }
@@ -37,7 +33,6 @@
 
     /* Control Panel */
     .control-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 16px; }
-    
     .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label { font-size: 0.85rem; font-weight: bold; color: #555; }
     .form-group select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; outline: none; }
@@ -48,34 +43,33 @@
 
     .select-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .btn-small { padding: 4px 8px; font-size: 0.75rem; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .btn-small:hover { background: #f0f0f0; }
-
     .student-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 6px; max-height: 150px; overflow-y: auto; padding: 8px; border: 1px solid #eee; border-radius: 6px; }
     .student-chip { padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.8rem; cursor: pointer; user-select: none; }
     .student-chip.selected { background: #4A90E2; color: white; border-color: #4A90E2; }
 
     .option-box { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 10px; border-radius: 6px; font-size: 0.85rem; }
     .option-box input { width: 16px; height: 16px; cursor: pointer; }
-
     .result-display { background: #eef6ff; padding: 12px; border-radius: 8px; text-align: center; }
-    .result-display h4 { font-size: 0.85rem; color: #4A90E2; margin-bottom: 4px; }
     .result-display .winner { font-size: 1.2rem; font-weight: bold; color: #2c3e50; }
 
     .btn-action-group { display: flex; gap: 8px; margin-top: auto; }
-    .btn-main { flex: 1; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; background-color: #4A90E2; color: white; }
-    .btn-main:hover { background-color: #357ABD; }
-    .btn-secondary { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-weight: bold; cursor: pointer; background-color: white; color: #333; }
-    .btn-secondary:hover { background-color: #f8f9fa; }
+    .btn-main, .btn-secondary { flex: 1; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; }
+    .btn-main { background-color: #4A90E2; color: white; }
+    .btn-secondary { background-color: white; color: #333; border: 1px solid #ccc; }
 
-    /* Modals */
+    /* Modals & Login Tabs */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
-    .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; color: #2c3e50; }
-    .modal-content input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
-    .modal-content button { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    
+    .login-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; margin-bottom: 8px; }
+    .login-toggle button { flex: 1; padding: 10px; border: none; background: #f8f9fa; cursor: pointer; font-weight: bold; color: #666; }
+    .login-toggle button.active { background: #4A90E2; color: white; }
+    
+    .modal-content input, .modal-content select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; width: 100%; }
+    .modal-content button.submit-btn { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
-
+    
     .load-list { list-style: none; max-height: 240px; overflow-y: auto; }
     .load-list li { padding: 10px 12px; border-bottom: 1px solid #eee; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; gap: 4px; }
     .load-list li:hover { background-color: #f0f7ff; }
@@ -83,7 +77,6 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header>
     <h1>🎡 학급 돌림판</h1>
     <div class="auth-status">
@@ -95,7 +88,7 @@
 
   <div class="container">
     <div class="app-content">
-      <!-- 돌림판 Visual -->
+      <!-- 돌림판 영역 -->
       <div class="wheel-card">
         <div class="wheel-container">
           <div class="pointer"></div>
@@ -107,13 +100,12 @@
       <!-- 제어 및 설정 패널 -->
       <div class="control-card">
         <div class="result-display">
-          <h4>당첨 결과</h4>
+          <h4 style="font-size: 0.85rem; color: #4A90E2; margin-bottom: 4px;">당첨 결과</h4>
           <div id="resultText" class="winner">대기 중...</div>
         </div>
 
-        <!-- 과목 선택 (스케줄표 과목 기준, 안내사항 제외) -->
         <div class="form-group">
-          <label for="subjectSelect">과목 선택</label>
+          <label for="subjectSelect">과목 선택 (저장 시 사용)</label>
           <select id="subjectSelect">
             <option value="국어">국어</option>
             <option value="수학">수학</option>
@@ -129,7 +121,6 @@
           </select>
         </div>
 
-        <!-- 회전 모드 설정 -->
         <div>
           <label style="font-size: 0.85rem; font-weight: bold; color: #555; display: block; margin-bottom: 6px;">회전 인원 설정</label>
           <div class="mode-selector">
@@ -138,7 +129,6 @@
           </div>
         </div>
 
-        <!-- 선택 학생 모드 전용 영역 -->
         <div id="studentSelectSection" style="display: none;">
           <div class="select-controls">
             <label style="font-size: 0.8rem; color: #666;">참여 학생 선택</label>
@@ -150,13 +140,11 @@
           <div id="studentGrid" class="student-select-grid"></div>
         </div>
 
-        <!-- 당첨자 자동 제외 옵션 -->
         <div class="option-box">
           <input type="checkbox" id="removeWinnerCheck" onchange="toggleRemoveWinnerOption(this.checked)">
           <label for="removeWinnerCheck">당첨된 학생 목록에서 즉시 제외하기</label>
         </div>
 
-        <!-- 저장 / 불러오기 버튼 그룹 -->
         <div class="btn-action-group">
           <button class="btn-main" onclick="saveCurrentWheel()">현재 돌림판 저장하기</button>
           <button class="btn-secondary" onclick="openLoadModal()">돌림판 불러오기</button>
@@ -165,15 +153,44 @@
     </div>
   </div>
 
-  <!-- 스케줄표와 동일한 로그인 모달 -->
+  <!-- 통합 로그인 모달 -->
   <div id="loginModal" class="modal hidden">
     <div class="modal-content">
-      <h2>학생 로그인</h2>
-      <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
-      <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <h2 style="text-align: center; color: #2c3e50;">시스템 접속</h2>
+      
+      <!-- 탭 버튼 -->
+      <div class="login-toggle">
+        <button id="tabStudent" class="active" onclick="switchLoginTab('student')">학생 로그인</button>
+        <button id="tabTeacher" onclick="switchLoginTab('teacher')">교사 로그인</button>
+      </div>
+
+      <!-- 학생 로그인 영역 -->
+      <div id="studentForm" style="display: flex; flex-direction: column; gap: 8px;">
+        <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+        <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      </div>
+
+      <!-- 교사 로그인 영역 (비밀번호 없음) -->
+      <div id="teacherForm" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 0.85rem; color: #666;">담당 과목을 선택하세요</label>
+        <select id="teacherSubjectSelect">
+          <option value="국어">국어</option>
+          <option value="수학">수학</option>
+          <option value="영어">영어</option>
+          <option value="과학">과학</option>
+          <option value="사회">사회</option>
+          <option value="도덕">도덕</option>
+          <option value="정보">정보</option>
+          <option value="진로">진로</option>
+          <option value="진로탐구">진로탐구</option>
+          <option value="음악">음악</option>
+          <option value="담임">담임교사</option>
+        </select>
+      </div>
+
       <div id="loginError" class="error-msg"></div>
-      <button onclick="handleLogin()">로그인</button>
-      <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
+      <button class="submit-btn" onclick="handleLogin()">로그인</button>
+      <button class="submit-btn" onclick="closeLoginModal()" style="background-color: #888;">취소</button>
     </div>
   </div>
 
@@ -182,32 +199,15 @@
     <div class="modal-content" style="width: 360px;">
       <h2>내 저장된 돌림판 목록</h2>
       <ul id="loadList" class="load-list"></ul>
-      <button onclick="closeLoadModal()" style="background-color: #888; margin-top: 10px;">닫기</button>
+      <button class="submit-btn" onclick="closeLoadModal()" style="background-color: #888; margin-top: 10px;">닫기</button>
     </div>
   </div>
 
-  <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged,
-      setPersistence,
-      browserLocalPersistence 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { 
-      getDatabase, 
-      ref, 
-      set, 
-      onValue, 
-      update, 
-      get, 
-      child 
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Firebase Config (본인 키 입력)
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -221,15 +221,15 @@
     const auth = getAuth(app);
     const db = getDatabase(app, firebaseConfig.databaseURL);
 
-    setPersistence(auth, browserLocalPersistence);
-
     const TOTAL_STUDENTS = 28;
     const COLORS = ["#f39c12", "#e74c3c", "#9b59b6", "#3498db", "#2ecc71", "#1abc9c", "#e67e22", "#34495e"];
 
+    let currentLoginMode = 'student'; // 'student' or 'teacher'
+    let teacherProfile = null; // 교사용 로컬 상태
     let currentUserProfile = null;
+
     let currentMode = 'all';
     let removeWinnerOnSpin = false;
-
     let selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1));
     let currentItems = Array.from({length: TOTAL_STUDENTS}, (_, i) => `${i + 1}번`);
     let currentRotation = 0;
@@ -239,8 +239,11 @@
     const ctx = canvas.getContext("2d");
     const sharedRef = ref(db, "shared_roulette");
 
-    // 인증 상태 감지 (스케줄러 동일 로직)
+    // Firebase 로그인 상태 감지
     onAuthStateChanged(auth, async (user) => {
+      // 교사 모드로 이미 로컬 로그인 된 상태면 Firebase 상태 무시
+      if (teacherProfile) return; 
+
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
       const btnLogout = document.getElementById('btnLogout');
@@ -250,17 +253,13 @@
           const snapshot = await get(child(ref(db), `accounts/${user.uid}`));
           if (snapshot.exists()) {
             currentUserProfile = snapshot.val();
-            userLabel.innerText = `👤 ${currentUserProfile.name}님`;
+            userLabel.innerText = `👤 ${currentUserProfile.name}님 (학생)`;
           } else {
-            const fallbackName = user.email.split('@')[0];
-            userLabel.innerText = `👤 ${fallbackName}님`;
-            currentUserProfile = { name: fallbackName };
+            userLabel.innerText = `👤 학생 로그인됨`;
           }
         } catch (e) {
-          console.error("계정 데이터 조회 실패:", e);
-          userLabel.innerText = `👤 로그인됨`;
+          userLabel.innerText = `👤 학생 로그인됨`;
         }
-
         btnLogin.classList.add('hidden');
         btnLogout.classList.remove('hidden');
       } else {
@@ -271,37 +270,72 @@
       }
     });
 
-    // 로그인 처리
-    window.handleLogin = async () => {
-      const name = document.getElementById('loginName').value.trim();
-      const pw = document.getElementById('loginPw').value.trim();
-      const errorEl = document.getElementById('loginError');
-
-      if (!name || !pw) {
-        errorEl.innerText = "이름과 비밀번호를 입력하세요.";
-        return;
-      }
-
-      const email = `${name}@school.jjy0205.site`;
-
-      try {
-        await signInWithEmailAndPassword(auth, email, pw);
-        closeLoginModal();
-        document.getElementById('loginName').value = '';
-        document.getElementById('loginPw').value = '';
-      } catch (err) {
-        console.error(err);
-        errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
-      }
-    };
-
-    window.handleLogout = () => signOut(auth);
-
-    // 모달 관리
-    window.openLoginModal = () => {
+    // 탭 전환
+    window.switchLoginTab = (tab) => {
+      currentLoginMode = tab;
+      document.getElementById('tabStudent').classList.toggle('active', tab === 'student');
+      document.getElementById('tabTeacher').classList.toggle('active', tab === 'teacher');
+      document.getElementById('studentForm').classList.toggle('hidden', tab !== 'student');
+      document.getElementById('teacherForm').classList.toggle('hidden', tab !== 'teacher');
       document.getElementById('loginError').innerText = '';
-      document.getElementById('loginModal').classList.remove('hidden');
     };
+
+    // 로그인 실행
+    window.handleLogin = async () => {
+      const errorEl = document.getElementById('loginError');
+      errorEl.innerText = '';
+
+      if (currentLoginMode === 'student') {
+        const name = document.getElementById('loginName').value.trim();
+        const pw = document.getElementById('loginPw').value.trim();
+        if (!name || !pw) {
+          errorEl.innerText = "이름과 비밀번호를 입력하세요.";
+          return;
+        }
+        const email = `${name}@school.jjy0205.site`;
+        try {
+          await signInWithEmailAndPassword(auth, email, pw);
+          closeLoginModal();
+          document.getElementById('loginName').value = '';
+          document.getElementById('loginPw').value = '';
+        } catch (err) {
+          errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
+        }
+      } else {
+        // 교사 로그인 (비밀번호 검증 없이 즉시 패스)
+        const subject = document.getElementById('teacherSubjectSelect').value;
+        teacherProfile = {
+          uid: `teacher_${subject}`,
+          name: `${subject} 교사`
+        };
+        
+        // UI 변경
+        document.getElementById('userLabel').innerText = `👨‍🏫 ${subject} 선생님`;
+        document.getElementById('btnLogin').classList.add('hidden');
+        document.getElementById('btnLogout').classList.remove('hidden');
+        
+        // 과목 선택란도 자동으로 해당 과목으로 맞춰줌
+        const mainSubjectSelect = document.getElementById('subjectSelect');
+        if([...mainSubjectSelect.options].some(opt => opt.value === subject)) {
+          mainSubjectSelect.value = subject;
+        }
+        
+        closeLoginModal();
+      }
+    };
+
+    // 로그아웃
+    window.handleLogout = () => {
+      teacherProfile = null;
+      signOut(auth).then(() => {
+        // onAuthStateChanged가 학생 로그아웃을 처리하며 UI를 원상복구함
+        document.getElementById('userLabel').innerText = "비로그인 상태 (조회전용)";
+        document.getElementById('btnLogin').classList.remove('hidden');
+        document.getElementById('btnLogout').classList.add('hidden');
+      });
+    };
+
+    window.openLoginModal = () => document.getElementById('loginModal').classList.remove('hidden');
     window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
     window.closeLoadModal = () => document.getElementById('loadModal').classList.add('hidden');
 
@@ -325,19 +359,13 @@
       document.getElementById("modeSelectBtn").classList.toggle("active", mode === 'select');
       document.getElementById("studentSelectSection").style.display = mode === 'select' ? 'block' : 'none';
 
-      if (mode === 'all') {
-        selectAllStudents(true);
-      } else {
-        renderStudentGrid();
-      }
+      if (mode === 'all') { selectAllStudents(true); } 
+      else { renderStudentGrid(); }
     };
 
     window.selectAllStudents = (selectAll) => {
-      if (selectAll) {
-        selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1));
-      } else {
-        selectedStudents.clear();
-      }
+      if (selectAll) { selectedStudents = new Set(Array.from({length: TOTAL_STUDENTS}, (_, i) => i + 1)); } 
+      else { selectedStudents.clear(); }
       renderStudentGrid();
       updateItemsFromSelection();
     };
@@ -350,11 +378,7 @@
         chip.className = `student-chip ${selectedStudents.has(i) ? 'selected' : ''}`;
         chip.innerText = `${i}번`;
         chip.onclick = () => {
-          if (selectedStudents.has(i)) {
-            selectedStudents.delete(i);
-          } else {
-            selectedStudents.add(i);
-          }
+          selectedStudents.has(i) ? selectedStudents.delete(i) : selectedStudents.add(i);
           chip.classList.toggle("selected");
           updateItemsFromSelection();
         };
@@ -369,10 +393,7 @@
       saveSharedState();
     }
 
-    window.toggleRemoveWinnerOption = (checked) => {
-      removeWinnerOnSpin = checked;
-      saveSharedState();
-    };
+    window.toggleRemoveWinnerOption = (checked) => { removeWinnerOnSpin = checked; saveSharedState(); };
 
     // 돌림판 그리기
     function drawWheel() {
@@ -380,7 +401,6 @@
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const radius = canvas.width / 2 - 5;
-
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (numItems === 0) {
@@ -390,9 +410,7 @@
         ctx.fillText("남은 학생이 없습니다.", centerX, centerY);
         return;
       }
-
       const arcSize = (Math.PI * 2) / numItems;
-
       ctx.save();
       ctx.translate(centerX, centerY);
       ctx.rotate((currentRotation * Math.PI) / 180);
@@ -400,7 +418,6 @@
       for (let i = 0; i < numItems; i++) {
         const angle = i * arcSize;
         ctx.fillStyle = COLORS[i % COLORS.length];
-
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.arc(0, 0, radius, angle, angle + arcSize);
@@ -415,18 +432,14 @@
         ctx.fillText(currentItems[i], radius - 15, 4);
         ctx.restore();
       }
-
       ctx.restore();
     }
 
     // 회전
     window.spinWheel = () => {
-      if (!auth.currentUser) { openLoginModal(); return; }
+      if (!auth.currentUser && !teacherProfile) { openLoginModal(); return; }
       if (isSpinning) return;
-      if (currentItems.length === 0) {
-        alert("돌릴 수 있는 학생이 없습니다.");
-        return;
-      }
+      if (currentItems.length === 0) { alert("돌릴 수 있는 학생이 없습니다."); return; }
 
       isSpinning = true;
       document.getElementById("btnSpin").disabled = true;
@@ -441,7 +454,6 @@
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
         const easeOut = 1 - Math.pow(1 - progress, 3);
-        
         currentRotation = startRotation + additionalRotation * easeOut;
         drawWheel();
 
@@ -460,45 +472,37 @@
           const winner = currentItems[winningIndex];
           document.getElementById("resultText").innerText = `🎉 ${winner}`;
 
-          if (removeWinnerOnSpin) {
-            currentItems.splice(winningIndex, 1);
-          }
-
+          if (removeWinnerOnSpin) { currentItems.splice(winningIndex, 1); }
           saveSharedState(winner);
         }
       }
-
       requestAnimationFrame(animate);
     };
 
     function saveSharedState(lastResult = null) {
-      const payload = {
-        items: currentItems,
-        rotation: currentRotation,
-        removeWinnerOnSpin: removeWinnerOnSpin
-      };
+      const payload = { items: currentItems, rotation: currentRotation, removeWinnerOnSpin: removeWinnerOnSpin };
       if (lastResult !== null) payload.lastResult = lastResult;
       update(sharedRef, payload);
     }
 
-    // [과목] [날짜] 돌림판 저장하기
+    // 데이터 저장
     window.saveCurrentWheel = async () => {
-      if (!auth.currentUser) {
+      if (!auth.currentUser && !teacherProfile) {
         alert("로그인이 필요합니다.");
         openLoginModal();
         return;
       }
 
+      const uid = teacherProfile ? teacherProfile.uid : auth.currentUser.uid;
+      const authorName = teacherProfile ? teacherProfile.name : (currentUserProfile ? currentUserProfile.name : "학생");
+      
       const subject = document.getElementById("subjectSelect").value;
       const today = new Date().toISOString().substring(0, 10);
       const wheelTitle = `[${subject}] [${today}] 돌림판`;
 
-      if (!confirm(`'${wheelTitle}' 이름으로 현재 돌림판을 저장하시겠습니까?`)) {
-        return;
-      }
+      if (!confirm(`'${wheelTitle}' 이름으로 현재 돌림판을 저장하시겠습니까?`)) { return; }
 
-      const userWheelRef = ref(db, `user_wheels/${auth.currentUser.uid}/${wheelTitle.replace(/[.#$[\]]/g, "_")}`);
-      
+      const userWheelRef = ref(db, `user_wheels/${uid}/${wheelTitle.replace(/[.#$[\]]/g, "_")}`);
       try {
         await set(userWheelRef, {
           title: wheelTitle,
@@ -507,25 +511,26 @@
           rotation: currentRotation,
           mode: currentMode,
           removeWinnerOnSpin: removeWinnerOnSpin,
-          authorUid: auth.currentUser.uid,
-          authorName: currentUserProfile ? currentUserProfile.name : "학생",
+          authorUid: uid,
+          authorName: authorName,
           createdAt: new Date().toISOString()
         });
         alert("성공적으로 저장되었습니다!");
       } catch (err) {
-        alert("저장 실패: " + err.message);
+        alert("저장 실패: " + err.message + "\n(Firebase Realtime Database 규칙을 확인해주세요.)");
       }
     };
 
-    // 자기 이름으로 저장된 돌림판 불러오기
+    // 불러오기
     window.openLoadModal = async () => {
-      if (!auth.currentUser) {
+      if (!auth.currentUser && !teacherProfile) {
         alert("로그인이 필요합니다.");
         openLoginModal();
         return;
       }
 
-      const userSavedRef = ref(db, `user_wheels/${auth.currentUser.uid}`);
+      const uid = teacherProfile ? teacherProfile.uid : auth.currentUser.uid;
+      const userSavedRef = ref(db, `user_wheels/${uid}`);
       try {
         const snapshot = await get(userSavedRef);
         const listEl = document.getElementById("loadList");
@@ -545,10 +550,7 @@
               currentRotation = item.rotation || 0;
               removeWinnerOnSpin = !!item.removeWinnerOnSpin;
               document.getElementById("removeWinnerCheck").checked = removeWinnerOnSpin;
-              if (item.subject) {
-                document.getElementById("subjectSelect").value = item.subject;
-              }
-
+              if (item.subject) { document.getElementById("subjectSelect").value = item.subject; }
               setMode(item.mode || 'all');
               drawWheel();
               saveSharedState();
@@ -565,7 +567,7 @@
       }
     };
 
-    // 초기화
+    // 초기 화면 세팅
     renderStudentGrid();
     drawWheel();
   </script>
