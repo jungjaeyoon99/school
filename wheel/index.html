@@ -170,7 +170,7 @@
         <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       </div>
 
-      <!-- 교사 로그인 영역 (비밀번호 없음 - 자동 입력) -->
+      <!-- 교사 로그인 영역 -->
       <div id="teacherForm" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
         <label style="font-size: 0.85rem; color: #666;">담당 과목을 선택하세요</label>
         <select id="teacherSubjectSelect">
@@ -186,7 +186,8 @@
           <option value="음악">음악</option>
           <option value="담임">담임</option>
         </select>
-        <p style="font-size: 0.75rem; color: #888; text-align: center; margin-top: 4px;">지정된 교사 통합 비밀번호로 자동 인증됩니다.</p>
+        <!-- 안전하게 교사 비밀번호 입력칸 추가 -->
+        <input type="password" id="teacherPw" placeholder="교사 통합 비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       </div>
 
       <div id="loginError" class="error-msg"></div>
@@ -299,7 +300,7 @@
       document.getElementById('loginError').innerText = '';
     };
 
-    // 🚀 실제 로그인 실행 (학생은 수동, 교사는 자동 패스워드 주입)
+    // 🚀 실제 로그인 실행 (학생 및 교사 모두 비밀번호 입력)
     window.handleLogin = async () => {
       const errorEl = document.getElementById('loginError');
       errorEl.innerText = '';
@@ -316,9 +317,14 @@
         }
         email = `${name}@school.jjy0205.site`;
       } else {
+        // 교사 로그인 처리
         const subject = document.getElementById('teacherSubjectSelect').value;
         email = `${subject}@school.jjy0205.site`;
-        pw = "teacherspasswordinjjy0205site!"; // 👈 교사 통합 패스워드 주입
+        pw = document.getElementById('teacherPw').value.trim(); 
+        if (!pw) {
+          errorEl.innerText = "비밀번호를 입력하세요.";
+          return;
+        }
       }
 
       try {
@@ -328,10 +334,12 @@
         if (currentLoginMode === 'student') {
           document.getElementById('loginName').value = '';
           document.getElementById('loginPw').value = '';
+        } else {
+          document.getElementById('teacherPw').value = '';
         }
       } catch (err) {
         if (currentLoginMode === 'teacher') {
-          errorEl.innerText = "해당 교사 계정이 아직 생성되지 않았습니다.";
+          errorEl.innerText = "비밀번호가 틀렸거나 계정이 아직 생성되지 않았습니다.";
         } else {
           errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
         }
