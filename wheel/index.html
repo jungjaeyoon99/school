@@ -170,7 +170,7 @@
         <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       </div>
 
-      <!-- 교사 로그인 영역 (비밀번호 없음) -->
+      <!-- 교사 로그인 영역 (비밀번호 없음 - 자동 입력) -->
       <div id="teacherForm" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
         <label style="font-size: 0.85rem; color: #666;">담당 과목을 선택하세요</label>
         <select id="teacherSubjectSelect">
@@ -184,8 +184,9 @@
           <option value="진로">진로</option>
           <option value="진로탐구">진로탐구</option>
           <option value="음악">음악</option>
-          <option value="담임">담임교사</option>
+          <option value="담임">담임</option>
         </select>
+        <p style="font-size: 0.75rem; color: #888; text-align: center; margin-top: 4px;">지정된 교사 통합 비밀번호로 자동 인증됩니다.</p>
       </div>
 
       <div id="loginError" class="error-msg"></div>
@@ -205,9 +206,10 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // ✅ 본인의 Firebase Config 입력
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -220,12 +222,13 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app, firebaseConfig.databaseURL);
+    setPersistence(auth, browserLocalPersistence);
 
     const TOTAL_STUDENTS = 28;
     const COLORS = ["#f39c12", "#e74c3c", "#9b59b6", "#3498db", "#2ecc71", "#1abc9c", "#e67e22", "#34495e"];
+    const TEACHER_SUBJECTS = ['국어','수학','영어','과학','사회','도덕','정보','진로','진로탐구','음악','담임'];
 
-    let currentLoginMode = 'student'; // 'student' or 'teacher'
-    let teacherProfile = null; // 교사용 로컬 상태
+    let currentLoginMode = 'student'; 
     let currentUserProfile = null;
 
     let currentMode = 'all';
@@ -239,27 +242,43 @@
     const ctx = canvas.getContext("2d");
     const sharedRef = ref(db, "shared_roulette");
 
-    // Firebase 로그인 상태 감지
+    // 🔥 Firebase 로그인 상태 감지 (학생 & 교사 공통)
     onAuthStateChanged(auth, async (user) => {
-      // 교사 모드로 이미 로컬 로그인 된 상태면 Firebase 상태 무시
-      if (teacherProfile) return; 
-
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
       const btnLogout = document.getElementById('btnLogout');
 
       if (user) {
+        // 이메일 앞부분(이름 또는 과목) 추출
+        const fallbackName = user.email.split('@')[0];
+        const isTeacher = TEACHER_SUBJECTS.includes(fallbackName);
+        let displayName = fallbackName;
+
         try {
           const snapshot = await get(child(ref(db), `accounts/${user.uid}`));
           if (snapshot.exists()) {
             currentUserProfile = snapshot.val();
-            userLabel.innerText = `👤 ${currentUserProfile.name}님 (학생)`;
+            displayName = currentUserProfile.name;
           } else {
-            userLabel.innerText = `👤 학생 로그인됨`;
+            // DB에 이름이 없어도 이메일 앞자리로 자동 생성
+            currentUserProfile = { name: fallbackName };
           }
         } catch (e) {
-          userLabel.innerText = `👤 학생 로그인됨`;
+          currentUserProfile = { name: fallbackName };
         }
+
+        // 교사/학생 UI 분기
+        if (isTeacher) {
+          userLabel.innerText = `👨‍🏫 ${displayName} 선생님`;
+          // 로그인 시 메인 과목 선택란도 담당 과목으로 자동 세팅
+          const mainSubjectSelect = document.getElementById('subjectSelect');
+          if([...mainSubjectSelect.options].some(opt => opt.value === displayName)) {
+            mainSubjectSelect.value = displayName;
+          }
+        } else {
+          userLabel.innerText = `👤 ${displayName}님 (학생)`;
+        }
+
         btnLogin.classList.add('hidden');
         btnLogout.classList.remove('hidden');
       } else {
@@ -280,61 +299,46 @@
       document.getElementById('loginError').innerText = '';
     };
 
-    // 로그인 실행
+    // 🚀 실제 로그인 실행 (학생은 수동, 교사는 자동 패스워드 주입)
     window.handleLogin = async () => {
       const errorEl = document.getElementById('loginError');
       errorEl.innerText = '';
+      
+      let email = "";
+      let pw = "";
 
       if (currentLoginMode === 'student') {
         const name = document.getElementById('loginName').value.trim();
-        const pw = document.getElementById('loginPw').value.trim();
+        pw = document.getElementById('loginPw').value.trim();
         if (!name || !pw) {
           errorEl.innerText = "이름과 비밀번호를 입력하세요.";
           return;
         }
-        const email = `${name}@school.jjy0205.site`;
-        try {
-          await signInWithEmailAndPassword(auth, email, pw);
-          closeLoginModal();
-          document.getElementById('loginName').value = '';
-          document.getElementById('loginPw').value = '';
-        } catch (err) {
-          errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
-        }
+        email = `${name}@school.jjy0205.site`;
       } else {
-        // 교사 로그인 (비밀번호 검증 없이 즉시 패스)
         const subject = document.getElementById('teacherSubjectSelect').value;
-        teacherProfile = {
-          uid: `teacher_${subject}`,
-          name: `${subject} 교사`
-        };
-        
-        // UI 변경
-        document.getElementById('userLabel').innerText = `👨‍🏫 ${subject} 선생님`;
-        document.getElementById('btnLogin').classList.add('hidden');
-        document.getElementById('btnLogout').classList.remove('hidden');
-        
-        // 과목 선택란도 자동으로 해당 과목으로 맞춰줌
-        const mainSubjectSelect = document.getElementById('subjectSelect');
-        if([...mainSubjectSelect.options].some(opt => opt.value === subject)) {
-          mainSubjectSelect.value = subject;
-        }
+        email = `${subject}@school.jjy0205.site`;
+        pw = "teacherspasswordinjjy0205site!"; // 👈 교사 통합 패스워드 주입
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, pw);
         
         closeLoginModal();
+        if (currentLoginMode === 'student') {
+          document.getElementById('loginName').value = '';
+          document.getElementById('loginPw').value = '';
+        }
+      } catch (err) {
+        if (currentLoginMode === 'teacher') {
+          errorEl.innerText = "해당 교사 계정이 아직 생성되지 않았습니다.";
+        } else {
+          errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
+        }
       }
     };
 
-    // 로그아웃
-    window.handleLogout = () => {
-      teacherProfile = null;
-      signOut(auth).then(() => {
-        // onAuthStateChanged가 학생 로그아웃을 처리하며 UI를 원상복구함
-        document.getElementById('userLabel').innerText = "비로그인 상태 (조회전용)";
-        document.getElementById('btnLogin').classList.remove('hidden');
-        document.getElementById('btnLogout').classList.add('hidden');
-      });
-    };
-
+    window.handleLogout = () => signOut(auth);
     window.openLoginModal = () => document.getElementById('loginModal').classList.remove('hidden');
     window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
     window.closeLoadModal = () => document.getElementById('loadModal').classList.add('hidden');
@@ -437,7 +441,7 @@
 
     // 회전
     window.spinWheel = () => {
-      if (!auth.currentUser && !teacherProfile) { openLoginModal(); return; }
+      if (!auth.currentUser) { openLoginModal(); return; }
       if (isSpinning) return;
       if (currentItems.length === 0) { alert("돌릴 수 있는 학생이 없습니다."); return; }
 
@@ -487,14 +491,11 @@
 
     // 데이터 저장
     window.saveCurrentWheel = async () => {
-      if (!auth.currentUser && !teacherProfile) {
+      if (!auth.currentUser) {
         alert("로그인이 필요합니다.");
         openLoginModal();
         return;
       }
-
-      const uid = teacherProfile ? teacherProfile.uid : auth.currentUser.uid;
-      const authorName = teacherProfile ? teacherProfile.name : (currentUserProfile ? currentUserProfile.name : "학생");
       
       const subject = document.getElementById("subjectSelect").value;
       const today = new Date().toISOString().substring(0, 10);
@@ -502,7 +503,7 @@
 
       if (!confirm(`'${wheelTitle}' 이름으로 현재 돌림판을 저장하시겠습니까?`)) { return; }
 
-      const userWheelRef = ref(db, `user_wheels/${uid}/${wheelTitle.replace(/[.#$[\]]/g, "_")}`);
+      const userWheelRef = ref(db, `user_wheels/${auth.currentUser.uid}/${wheelTitle.replace(/[.#$[\]]/g, "_")}`);
       try {
         await set(userWheelRef, {
           title: wheelTitle,
@@ -511,26 +512,25 @@
           rotation: currentRotation,
           mode: currentMode,
           removeWinnerOnSpin: removeWinnerOnSpin,
-          authorUid: uid,
-          authorName: authorName,
+          authorUid: auth.currentUser.uid,
+          authorName: currentUserProfile.name,
           createdAt: new Date().toISOString()
         });
         alert("성공적으로 저장되었습니다!");
       } catch (err) {
-        alert("저장 실패: " + err.message + "\n(Firebase Realtime Database 규칙을 확인해주세요.)");
+        alert("저장 실패: " + err.message);
       }
     };
 
     // 불러오기
     window.openLoadModal = async () => {
-      if (!auth.currentUser && !teacherProfile) {
+      if (!auth.currentUser) {
         alert("로그인이 필요합니다.");
         openLoginModal();
         return;
       }
 
-      const uid = teacherProfile ? teacherProfile.uid : auth.currentUser.uid;
-      const userSavedRef = ref(db, `user_wheels/${uid}`);
+      const userSavedRef = ref(db, `user_wheels/${auth.currentUser.uid}`);
       try {
         const snapshot = await get(userSavedRef);
         const listEl = document.getElementById("loadList");
