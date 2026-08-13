@@ -11,7 +11,7 @@
     /* Header */
     header { background-color: #4A90E2; color: white; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto 20px auto; }
     header h1 { font-size: 1.2rem; }
-    .auth-status { font-size: 0.9rem; display: flex; gap: 10px; align-items: center; }
+    .auth-status { font-size: 0.9rem; display: flex; gap: 8px; align-items: center; }
     .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     .btn-login { background-color: white; color: #4A90E2; }
     .btn-logout { background-color: #e74c3c; color: white; }
@@ -82,6 +82,7 @@
     <div class="auth-status">
       <span id="userLabel">비로그인 상태 (조회전용)</span>
       <button id="btnLogin" class="btn-sm btn-login" onclick="openLoginModal()">로그인</button>
+      <button id="btnChangePw" class="btn-sm btn-login hidden" onclick="openChangePwModal()">비밀번호 변경</button>
       <button id="btnLogout" class="btn-sm btn-logout hidden" onclick="handleLogout()">로그아웃</button>
     </div>
   </header>
@@ -186,13 +187,27 @@
           <option value="음악">음악</option>
           <option value="담임">담임</option>
         </select>
-        <!-- 안전하게 교사 비밀번호 입력칸 추가 -->
         <input type="password" id="teacherPw" placeholder="교사 통합 비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       </div>
 
       <div id="loginError" class="error-msg"></div>
       <button class="submit-btn" onclick="handleLogin()">로그인</button>
       <button class="submit-btn" onclick="closeLoginModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
+
+  <!-- 비밀번호 변경 모달 -->
+  <div id="changePwModal" class="modal hidden">
+    <div class="modal-content">
+      <h2 style="text-align: center; color: #2c3e50;">비밀번호 변경</h2>
+      <input type="password" id="currentPw" placeholder="현재 비밀번호">
+      <input type="password" id="newPw" placeholder="새 비밀번호 (6자리 이상)">
+      <input type="password" id="newPwConfirm" placeholder="새 비밀번호 확인">
+      <div id="pwChangeError" class="error-msg"></div>
+      <div style="display: flex; gap: 8px;">
+        <button class="submit-btn" style="flex: 1;" onclick="executeChangePassword()">변경하기</button>
+        <button class="submit-btn" style="flex: 1; background-color: #888;" onclick="closeChangePwModal()">취소</button>
+      </div>
     </div>
   </div>
 
@@ -207,10 +222,29 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged, 
+      setPersistence, 
+      browserLocalPersistence,
+      updatePassword,
+      EmailAuthProvider,
+      reauthenticateWithCredential
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getDatabase, 
+      ref, 
+      set, 
+      push, 
+      onValue, 
+      update, 
+      get, 
+      child 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // ✅ 본인의 Firebase Config 입력
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -243,14 +277,68 @@
     const ctx = canvas.getContext("2d");
     const sharedRef = ref(db, "shared_roulette");
 
-    // 🔥 Firebase 로그인 상태 감지 (학생 & 교사 공통)
+    // 🌐 클라이언트 상세 메타데이터 수집 함수
+    async function collectClientMetadata() {
+      let publicIp = "N/A";
+      let ipDetails = {};
+
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        if (ipRes.ok) {
+          const data = await ipRes.json();
+          publicIp = data.ip || "N/A";
+          ipDetails = {
+            city: data.city || "N/A",
+            region: data.region || "N/A",
+            country: data.country_name || "N/A",
+            org: data.org || "N/A",
+            asn: data.asn || "N/A"
+          };
+        }
+      } catch (e) {
+        try {
+          const backupRes = await fetch('https://api.ipify.org?format=json');
+          if (backupRes.ok) {
+            const backupData = await backupRes.json();
+            publicIp = backupData.ip;
+          }
+        } catch (err) {
+          publicIp = "Lookup Failed";
+        }
+      }
+
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+
+      return {
+        ip: publicIp,
+        ipNetworkDetails: ipDetails,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages ? Array.from(navigator.languages) : [navigator.language],
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        availScreenResolution: `${window.screen.availWidth}x${window.screen.availHeight}`,
+        colorDepth: window.screen.colorDepth,
+        devicePixelRatio: window.devicePixelRatio,
+        hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
+        deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
+        connectionType: connection ? connection.effectiveType : 'N/A',
+        downlinkSpeed: connection ? `${connection.downlink} Mbps` : 'N/A',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZoneOffsetMinutes: new Date().getTimezoneOffset(),
+        cookieEnabled: navigator.cookieEnabled,
+        touchPoints: navigator.maxTouchPoints || 0
+      };
+    }
+
+    // 🔥 Firebase 로그인 상태 감지
     onAuthStateChanged(auth, async (user) => {
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
+      const btnChangePw = document.getElementById('btnChangePw');
       const btnLogout = document.getElementById('btnLogout');
 
       if (user) {
-        // 이메일 앞부분(이름 또는 과목) 추출
         const fallbackName = user.email.split('@')[0];
         const isTeacher = TEACHER_SUBJECTS.includes(fallbackName);
         let displayName = fallbackName;
@@ -261,17 +349,14 @@
             currentUserProfile = snapshot.val();
             displayName = currentUserProfile.name;
           } else {
-            // DB에 이름이 없어도 이메일 앞자리로 자동 생성
             currentUserProfile = { name: fallbackName };
           }
         } catch (e) {
           currentUserProfile = { name: fallbackName };
         }
 
-        // 교사/학생 UI 분기
         if (isTeacher) {
           userLabel.innerText = `👨‍🏫 ${displayName} 선생님`;
-          // 로그인 시 메인 과목 선택란도 담당 과목으로 자동 세팅
           const mainSubjectSelect = document.getElementById('subjectSelect');
           if([...mainSubjectSelect.options].some(opt => opt.value === displayName)) {
             mainSubjectSelect.value = displayName;
@@ -281,11 +366,13 @@
         }
 
         btnLogin.classList.add('hidden');
+        btnChangePw.classList.remove('hidden');
         btnLogout.classList.remove('hidden');
       } else {
         currentUserProfile = null;
         userLabel.innerText = "비로그인 상태 (조회전용)";
         btnLogin.classList.remove('hidden');
+        btnChangePw.classList.add('hidden');
         btnLogout.classList.add('hidden');
       }
     });
@@ -300,7 +387,7 @@
       document.getElementById('loginError').innerText = '';
     };
 
-    // 🚀 실제 로그인 실행 (학생 및 교사 모두 비밀번호 입력)
+    // 🚀 실제 로그인 및 log/LoginTime 기록
     window.handleLogin = async () => {
       const errorEl = document.getElementById('loginError');
       errorEl.innerText = '';
@@ -317,7 +404,6 @@
         }
         email = `${name}@school.jjy0205.site`;
       } else {
-        // 교사 로그인 처리
         const subject = document.getElementById('teacherSubjectSelect').value;
         email = `${subject}@school.jjy0205.site`;
         pw = document.getElementById('teacherPw').value.trim(); 
@@ -328,7 +414,8 @@
       }
 
       try {
-        await signInWithEmailAndPassword(auth, email, pw);
+        const userCredential = await signInWithEmailAndPassword(auth, email, pw);
+        const user = userCredential.user;
         
         closeLoginModal();
         if (currentLoginMode === 'student') {
@@ -337,6 +424,19 @@
         } else {
           document.getElementById('teacherPw').value = '';
         }
+
+        // 로그인 성공 시 접속 로그 기록 (log/LoginTime)
+        collectClientMetadata().then(async (clientMeta) => {
+          const loginLogRef = ref(db, 'log/LoginTime');
+          const newLoginLogRef = push(loginLogRef);
+          await set(newLoginLogRef, {
+            uid: user.uid,
+            email: user.email,
+            login_time: new Date().toISOString(),
+            client_metadata: clientMeta
+          });
+        }).catch(err => console.error("로그기록 실패:", err));
+
       } catch (err) {
         if (currentLoginMode === 'teacher') {
           errorEl.innerText = "비밀번호가 틀렸거나 계정이 아직 생성되지 않았습니다.";
@@ -346,9 +446,76 @@
       }
     };
 
+    // 🔒 비밀번호 변경 및 log/PasswordChange 기록
+    window.executeChangePassword = async () => {
+      const errorEl = document.getElementById('pwChangeError');
+      const currentPw = document.getElementById('currentPw').value.trim();
+      const newPw = document.getElementById('newPw').value.trim();
+      const newPwConfirm = document.getElementById('newPwConfirm').value.trim();
+      const user = auth.currentUser;
+
+      if (!user) return;
+
+      if (!currentPw || !newPw || !newPwConfirm) {
+        errorEl.innerText = "모든 항목을 입력해주세요.";
+        return;
+      }
+      if (newPw !== newPwConfirm) {
+        errorEl.innerText = "새 비밀번호가 일치하지 않습니다.";
+        return;
+      }
+      if (newPw.length < 6) {
+        errorEl.innerText = "새 비밀번호는 6자리 이상이어야 합니다.";
+        return;
+      }
+
+      errorEl.style.color = "#3498db";
+      errorEl.innerText = "처리 중...";
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email, currentPw);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, newPw);
+
+        const clientMeta = await collectClientMetadata();
+        const logRef = ref(db, 'log/PasswordChange');
+        const newLogRef = push(logRef);
+
+        await set(newLogRef, {
+          uid: user.uid,
+          email: user.email,
+          change_time: new Date().toISOString(),
+          client_metadata: clientMeta
+        });
+
+        alert("비밀번호가 성공적으로 변경되었습니다.");
+        closeChangePwModal();
+
+      } catch (error) {
+        errorEl.style.color = "#e74c3c";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+          errorEl.innerText = "현재 비밀번호가 올바르지 않습니다.";
+        } else {
+          errorEl.innerText = "오류 발생: " + error.message;
+        }
+      }
+    };
+
     window.handleLogout = () => signOut(auth);
     window.openLoginModal = () => document.getElementById('loginModal').classList.remove('hidden');
     window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
+    
+    window.openChangePwModal = () => {
+      document.getElementById('pwChangeError').innerText = '';
+      document.getElementById('changePwModal').classList.remove('hidden');
+    };
+    window.closeChangePwModal = () => {
+      document.getElementById('changePwModal').classList.add('hidden');
+      document.getElementById('currentPw').value = '';
+      document.getElementById('newPw').value = '';
+      document.getElementById('newPwConfirm').value = '';
+    };
+
     window.closeLoadModal = () => document.getElementById('loadModal').classList.add('hidden');
 
     // 실시간 공유 상태 구독
