@@ -166,19 +166,16 @@
     <div class="modal-content">
       <h2 style="text-align: center; color: #2c3e50;">시스템 접속</h2>
       
-      <!-- 탭 버튼 -->
       <div class="login-toggle">
         <button id="tabStudent" class="active" onclick="switchLoginTab('student')">학생 로그인</button>
         <button id="tabTeacher" onclick="switchLoginTab('teacher')">교사 로그인</button>
       </div>
 
-      <!-- 학생 로그인 영역 -->
       <div id="studentForm" style="display: flex; flex-direction: column; gap: 8px;">
         <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
         <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       </div>
 
-      <!-- 교사 로그인 영역 -->
       <div id="teacherForm" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
         <label style="font-size: 0.85rem; color: #666;">담당 과목을 선택하세요</label>
         <select id="teacherSubjectSelect">
@@ -272,7 +269,7 @@
 
     let currentLoginMode = 'student'; 
     let currentUserProfile = null;
-    let studentNameMap = null; // 학생 번호-이름 매핑 객체
+    let studentNameMap = null; // 학생 번호-이름 매핑 저장 객체
 
     let currentMode = 'all';
     let removeWinnerOnSpin = false;
@@ -285,7 +282,7 @@
     const ctx = canvas.getContext("2d");
     const sharedRef = ref(db, "shared_roulette");
 
-    // 🌐 클라이언트 상세 메타데이터 수집 함수
+    // 🌐 접속 클라이언트 정보 메타데이터 수집
     async function collectClientMetadata() {
       let publicIp = "N/A";
       let ipDetails = {};
@@ -357,7 +354,7 @@
       }
     }
 
-    // 🔥 Firebase 로그인 상태 감지 (자동 로그인 포함)
+    // 🔥 Firebase 로그인 상태 감지 (자동로그인 포함)
     onAuthStateChanged(auth, async (user) => {
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
@@ -410,7 +407,6 @@
       }
     });
 
-    // 탭 전환
     window.switchLoginTab = (tab) => {
       currentLoginMode = tab;
       document.getElementById('tabStudent').classList.toggle('active', tab === 'student');
@@ -420,7 +416,6 @@
       document.getElementById('loginError').innerText = '';
     };
 
-    // 🚀 실제 로그인
     window.handleLogin = async () => {
       const errorEl = document.getElementById('loginError');
       errorEl.innerText = '';
@@ -450,7 +445,6 @@
         const userCredential = await signInWithEmailAndPassword(auth, email, pw);
         const user = userCredential.user;
         
-        // 수동 로그인 로그 플래그 설정 후 수동로그인 로그 추가
         sessionStorage.setItem(`logged_session_${user.uid}`, 'true');
         logLoginEvent(user, 'manual_login');
 
@@ -471,31 +465,27 @@
       }
     };
 
-    // 🔑 admin_password 인증 및 학생 이름 적용
+    // 🔑 $client_password 보안 규칙에 따른 학생 이름 적용
     window.applyStudentNames = async () => {
+      if (!auth.currentUser) {
+        alert("로그인이 필요합니다.");
+        openLoginModal();
+        return;
+      }
+
       const inputPw = prompt("학생 이름을 불러오기 위해 관리자 비밀번호(admin_password)를 입력하세요:");
-      if (inputPw === null) return; 
+      if (inputPw === null) return;
       if (!inputPw.trim()) {
         alert("비밀번호를 입력해주세요.");
         return;
       }
 
       try {
-        const adminPwSnap = await get(ref(db, 'admin_password'));
-        if (!adminPwSnap.exists()) {
-          alert("DB에서 admin_password 키를 찾을 수 없습니다.");
-          return;
-        }
+        // 서버 측 $client_password === admin_password 검증 규칙을 타기 위해 입력된 비밀번호 경로로 요청
+        const studentsSnap = await get(ref(db, `students/${inputPw.trim()}`));
 
-        const realAdminPw = String(adminPwSnap.val()).trim();
-        if (inputPw.trim() !== realAdminPw) {
-          alert("비밀번호가 일치하지 않습니다.");
-          return;
-        }
-
-        const studentsSnap = await get(ref(db, 'students'));
         if (!studentsSnap.exists()) {
-          alert("DB에서 students 태그 데이터를 찾을 수 없습니다.");
+          alert("비밀번호가 올바르지 않거나 학생 명단을 찾을 수 없습니다.");
           return;
         }
 
@@ -503,12 +493,13 @@
         updateItemsFromSelection();
         renderStudentGrid();
         alert("학생 이름이 성공적으로 적용되었습니다!");
+
       } catch (err) {
-        alert("오류 발생: " + err.message);
+        console.error(err);
+        alert("접근 거부: 비밀번호가 올바르지 않거나 접근 권한이 없습니다.");
       }
     };
 
-    // 🔒 비밀번호 변경 및 log/PasswordChange 기록
     window.executeChangePassword = async () => {
       const errorEl = document.getElementById('pwChangeError');
       const currentPw = document.getElementById('currentPw').value.trim();
@@ -580,7 +571,6 @@
 
     window.closeLoadModal = () => document.getElementById('loadModal').classList.add('hidden');
 
-    // 실시간 공유 상태 구독
     onValue(sharedRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
@@ -593,7 +583,6 @@
       }
     });
 
-    // 인원 제어
     window.setMode = (mode) => {
       currentMode = mode;
       document.getElementById("modeAllBtn").classList.toggle("active", mode === 'all');
@@ -618,7 +607,6 @@
         const chip = document.createElement("div");
         chip.className = `student-chip ${selectedStudents.has(i) ? 'selected' : ''}`;
         
-        // 학생 이름이 적용되어 있으면 이름 표시
         const studentName = (studentNameMap && (studentNameMap[i] || studentNameMap[String(i)]))
           ? studentNameMap[i] || studentNameMap[String(i)]
           : `${i}번`;
@@ -647,7 +635,6 @@
 
     window.toggleRemoveWinnerOption = (checked) => { removeWinnerOnSpin = checked; saveSharedState(); };
 
-    // 돌림판 그리기
     function drawWheel() {
       const numItems = currentItems.length;
       const centerX = canvas.width / 2;
@@ -687,7 +674,6 @@
       ctx.restore();
     }
 
-    // 회전
     window.spinWheel = () => {
       if (!auth.currentUser) { openLoginModal(); return; }
       if (isSpinning) return;
@@ -737,7 +723,7 @@
       update(sharedRef, payload);
     }
 
-    // 데이터 저장 (이름 변경 가능 프롬프트 포함)
+    // 저장 시 기본 이름 제안 및 수정 기능
     window.saveCurrentWheel = async () => {
       if (!auth.currentUser) {
         alert("로그인이 필요합니다.");
@@ -749,9 +735,8 @@
       const today = new Date().toISOString().substring(0, 10);
       const defaultTitle = `[${subject}] [${today}] 돌림판`;
 
-      // 저장 전 이름 수정 가능 프롬프트 창
       const inputTitle = prompt("저장할 돌림판 이름을 입력하거나 수정하세요:", defaultTitle);
-      if (inputTitle === null) return; // 취소 버튼 누름
+      if (inputTitle === null) return;
       const wheelTitle = inputTitle.trim();
 
       if (!wheelTitle) {
@@ -778,7 +763,6 @@
       }
     };
 
-    // 불러오기
     window.openLoadModal = async () => {
       if (!auth.currentUser) {
         alert("로그인이 필요합니다.");
@@ -823,7 +807,6 @@
       }
     };
 
-    // 초기 화면 세팅
     renderStudentGrid();
     drawWheel();
   </script>
