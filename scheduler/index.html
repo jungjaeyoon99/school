@@ -59,6 +59,9 @@
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
     .notification-help-message { color: #333; font-size: 0.9rem; line-height: 1.65; background: #f7f9fc; padding: 12px; border-radius: 8px; }
+    .privacy-box { color: #333; font-size: 0.88rem; line-height: 1.65; background: #f7f9fc; padding: 12px; border-radius: 8px; max-height: 260px; overflow-y: auto; }
+    .privacy-consent { display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; line-height: 1.5; }
+    .privacy-consent input { margin-top: 3px; width: auto; }
   </style>
 </head>
 <body>
@@ -120,12 +123,33 @@
   </div>
 
   <div id="loginModal" class="modal hidden">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 430px; width: calc(100% - 32px);">
       <h2>학생 로그인</h2>
       <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+
+      <div class="privacy-box">
+        <b>개인정보 이용약관</b><br><br>
+        <b>1. 수집 목적</b><br>
+        로그인 및 서비스 이용 과정의 접속 기록을 관리하고 서비스 보안을 유지하기 위해 최소한의 정보를 수집합니다.<br><br>
+
+        <b>2. 수집 항목</b><br>
+        접속 IP, 접속 시각, 브라우저 및 OS 정보(User-Agent)만 수집합니다.<br><br>
+
+        <b>3. 보유 및 폐기 기간</b><br>
+        수집된 로그는 2학기 내내 저장되며, 내년 1학기부터 폐기합니다.<br><br>
+
+        <b>4. 제3자 제공</b><br>
+        위 수집 정보는 본 서비스의 로그 관리 목적 외의 용도로 사용하거나 제3자에게 제공하지 않습니다.
+      </div>
+
+      <label class="privacy-consent">
+        <input type="checkbox" id="privacyConsent">
+        <span>개인정보 이용약관을 읽었으며 이에 동의합니다. 동의해야 로그인할 수 있습니다.</span>
+      </label>
+
       <div id="loginError" class="error-msg"></div>
-      <button onclick="handleLogin()">로그인</button>
+      <button onclick="handleLogin()">동의하고 로그인</button>
       <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
     </div>
   </div>
@@ -241,20 +265,12 @@
 
     async function collectClientMetadata() {
       let publicIp = "N/A";
-      let ipDetails = {};
 
       try {
         const ipRes = await fetch('https://ipapi.co/json/');
         if (ipRes.ok) {
           const data = await ipRes.json();
           publicIp = data.ip || "N/A";
-          ipDetails = {
-            city: data.city || "N/A",
-            region: data.region || "N/A",
-            country: data.country_name || "N/A",
-            org: data.org || "N/A",
-            asn: data.asn || "N/A"
-          };
         }
       } catch (e) {
         try {
@@ -268,27 +284,10 @@
         }
       }
 
-      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-
       return {
         ip: publicIp,
-        ipNetworkDetails: ipDetails,
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        language: navigator.language,
-        languages: navigator.languages ? Array.from(navigator.languages) : [navigator.language],
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        availScreenResolution: `${window.screen.availWidth}x${window.screen.availHeight}`,
-        colorDepth: window.screen.colorDepth,
-        devicePixelRatio: window.devicePixelRatio,
-        hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
-        deviceMemory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'N/A',
-        connectionType: connection ? connection.effectiveType : 'N/A',
-        downlinkSpeed: connection ? `${connection.downlink} Mbps` : 'N/A',
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        timeZoneOffsetMinutes: new Date().getTimezoneOffset(),
-        cookieEnabled: navigator.cookieEnabled,
-        touchPoints: navigator.maxTouchPoints || 0
+        access_time: new Date().toISOString(),
+        userAgent: navigator.userAgent
       };
     }
 
@@ -447,7 +446,13 @@
     window.handleLogin = async () => {
       const name = document.getElementById('loginName').value.trim();
       const pw = document.getElementById('loginPw').value.trim();
+      const consent = document.getElementById('privacyConsent').checked;
       const errorEl = document.getElementById('loginError');
+
+      if (!consent) {
+        errorEl.innerText = "개인정보 이용약관에 동의해야 로그인할 수 있습니다.";
+        return;
+      }
 
       if (!name || !pw) {
         errorEl.innerText = "이름과 비밀번호를 입력하세요.";
@@ -463,17 +468,21 @@
         closeLoginModal();
         document.getElementById('loginName').value = '';
         document.getElementById('loginPw').value = '';
+        document.getElementById('privacyConsent').checked = false;
 
-        collectClientMetadata().then(async (clientMeta) => {
-          const loginLogRef = ref(db, 'log/LoginTime');
-          const newLoginLogRef = push(loginLogRef);
-          await set(newLoginLogRef, {
-            uid: user.uid,
-            email: user.email,
-            login_time: new Date().toISOString(),
-            client_metadata: clientMeta
-          });
-        }).catch(err => console.error("로그인 로그 기록 실패:", err));
+        const clientMeta = await collectClientMetadata();
+        const loginLogRef = ref(db, 'log/LoginTime');
+        const newLoginLogRef = push(loginLogRef);
+        await set(newLoginLogRef, {
+          uid: user.uid,
+          email: user.email,
+          login_time: clientMeta.access_time,
+          client_metadata: {
+            ip: clientMeta.ip,
+            access_time: clientMeta.access_time,
+            userAgent: clientMeta.userAgent
+          }
+        });
       } catch (err) {
         console.error(err);
         errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
@@ -711,6 +720,7 @@
 
     window.openLoginModal = () => {
       document.getElementById('loginError').innerText = '';
+      document.getElementById('privacyConsent').checked = false;
       document.getElementById('loginModal').classList.remove('hidden');
     };
     window.closeLoginModal = () => {
