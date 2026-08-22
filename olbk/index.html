@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>중계중 1-2 학급 스케줄러</title>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#f0f2f5; color:#263238; min-height:100vh; }
+  header { background:#1f5f8b; color:#fff; padding:18px 22px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  header h1 { font-size:1.25rem; }
+  .sub { opacity:.85; font-size:.8rem; margin-top:3px; }
+  .auth-status { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; font-size:.88rem; }
+  .btn-sm { padding:7px 12px; border:0; border-radius:6px; cursor:pointer; font-weight:700; }
+  .btn-login { background:#fff; color:#1f5f8b; }
+  .btn-logout { background:#e74c3c; color:#fff; }
+  main { max-width:900px; margin:0 auto; padding:22px 16px 90px; }
+  .panel { background:#fff; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
+  .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
+  .panel-head h2 { font-size:1.05rem; }
+  .balance-card { background:linear-gradient(135deg,#1f5f8b,#287ba8); color:#fff; border-radius:14px; padding:22px; margin-bottom:20px; }
+  .balance-card .muted { color:rgba(255,255,255,.8); }
+  .balance { font-size:2.2rem; font-weight:800; margin-top:7px; }
+  .balance small { font-size:1rem; }
+  .muted { color:#7f8c8d; font-size:.78rem; }
+  .history-list { display:flex; flex-direction:column; gap:8px; }
+  .history-row,.account-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid #edf0f2; border-radius:9px; }
+  .history-row strong,.account-row strong { white-space:nowrap; }
+  .plus { color:#168a4a; }
+  .minus { color:#d64b4b; }
+  .admin-grid { display:grid; grid-template-columns:minmax(250px,1fr) minmax(300px,1.2fr); gap:14px; }
+  .form-card { border:1px solid #e5e9ed; border-radius:10px; padding:14px; }
+  .form-card h3 { font-size:.95rem; margin-bottom:12px; }
+  label { display:block; font-size:.8rem; font-weight:700; margin:9px 0 5px; }
+  input { width:100%; padding:10px; border:1px solid #ccd3d8; border-radius:7px; outline:none; }
+  input:focus { border-color:#1f5f8b; }
+  .primary { width:100%; margin-top:12px; padding:10px; border:0; border-radius:7px; background:#1f5f8b; color:#fff; font-weight:800; cursor:pointer; }
+  .error-msg { color:#e74c3c; font-size:.78rem; margin-top:8px; min-height:18px; }
+  .security-note { background:#fff7df; border:1px solid #f0d98a; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.82rem; line-height:1.55; }
+  .account-list { display:flex; flex-direction:column; gap:7px; max-height:300px; overflow:auto; }
+  .transactions-head { margin-top:20px; }
+  .empty { text-align:center; color:#7f8c8d; padding:34px 12px; }
+  .empty.small { padding:20px 8px; font-size:.85rem; }
+  .empty-icon { font-size:2.4rem; margin-bottom:8px; }
+  footer { position:fixed; bottom:0; width:100%; text-align:center; padding:11px; background:#fff; color:#8b969d; font-size:.75rem; border-top:1px solid #e4e8eb; }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; justify-content:center; align-items:center; z-index:100; }
+  .modal-content { background:#fff; padding:22px; border-radius:12px; width:320px; display:flex; flex-direction:column; gap:10px; }
+  .modal-content h2 { text-align:center; font-size:1.1rem; margin-bottom:5px; }
+  .modal-content button { padding:10px; border:0; border-radius:7px; background:#1f5f8b; color:#fff; font-weight:700; cursor:pointer; }
+  .privacy-note { background:#f5f7f9; padding:10px; border-radius:7px; color:#65727a; font-size:.78rem; line-height:1.5; }
+  .hidden { display:none !important; }
+  @media (max-width:700px) {
+    header { align-items:flex-start; flex-direction:column; }
+    .admin-grid { grid-template-columns:1fr; }
+    .history-row,.account-row { align-items:flex-start; }
+  }
+</style>
+
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>🏦 OL Banking</h1>
+      <div class="sub">우리 반 전용 가상 화폐 · 단위: sh</div>
+    </div>
+    <div class="auth-status">
+      <span id="userLabel">비로그인 상태</span>
+      <button id="btnLogin" class="btn-sm btn-login" onclick="openLoginModal()">로그인</button>
+      <button id="btnLogout" class="btn-sm btn-logout hidden" onclick="handleLogout()">로그아웃</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="studentPanel" class="panel hidden">
+      <div class="balance-card">
+        <div class="muted">현재 잔고</div>
+        <div class="balance"><span id="myBalance">0</span> <small>sh</small></div>
+      </div>
+
+      <div class="panel-head">
+        <h2>내 사용 내역</h2>
+        <span id="historyStatus" class="muted">불러오는 중...</span>
+      </div>
+      <div id="myHistory" class="history-list"></div>
+    </section>
+
+    
+      <div class="security-note">
+        <b>보안 안내</b>
+        <div>학생 계정은 잔고·거래 내역을 조회할 수만 있으며, 잔고 변경은 Firebase Database Rules에서 teacher/admin 계정으로 제한됩니다.</div>
+      </div>
+
+    <section id="teacherPanel" class="panel hidden">
+      <div class="panel-head">
+        <div>
+          <h2>교사·관리자 금융 관리</h2>
+          <div class="muted">TeacherUID에서 admin 또는 teacher로 등록된 계정만 사용할 수 있습니다.</div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="form-card">
+          <h3>화폐 할당 / 재배치</h3>
+          <label>학생 UID</label>
+          <input id="targetUid" placeholder="학생 Firebase UID">
+          <label>변동 sh</label>
+          <input id="amount" type="number" step="1" placeholder="예: 100 또는 -50">
+          <label>사유</label>
+          <input id="reason" maxlength="100" placeholder="예: 학급 활동 보상">
+          <button class="primary" onclick="adjustBalance()">잔고 반영</button>
+          <div id="adjustError" class="error-msg"></div>
+        </div>
+
+        <div class="form-card">
+          <h3>전체 계좌</h3>
+          <div id="allAccounts" class="account-list">불러오는 중...</div>
+        </div>
+      </div>
+
+      <div class="panel-head transactions-head">
+        <h2>전체 거래 내역</h2>
+      </div>
+      <div id="allHistory" class="history-list"></div>
+    </section>
+
+    <section id="guestPanel" class="panel">
+      <div class="empty">
+        <div class="empty-icon">🏦</div>
+        <h2>OL Banking</h2>
+        <p>로그인하면 현재 잔고와 사용 내역을 확인할 수 있습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2026 Jaeyun Jeong · OL Banking · 가상 화폐 sh</footer>
+
+  <div id="loginModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>학생 로그인</h2>
+      <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
+      <div class="privacy-note">
+        기존 스케줄러와 동일한 Firebase 계정을 사용합니다.
+      </div>
+      <div id="loginError" class="error-msg"></div>
+      <button onclick="handleLogin()">로그인</button>
+      <button onclick="closeLoginModal()" style="background:#888;">취소</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      setPersistence,
+      browserLocalPersistence
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      onValue,
+      push,
+      runTransaction
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
+      authDomain: "school-scheduler-site.firebaseapp.com",
+      projectId: "school-scheduler-site",
+      storageBucket: "school-scheduler-site.firebasestorage.app",
+      messagingSenderId: "795313018608",
+      appId: "1:795313018608:web:e27b73e0be3fbb9bccd435"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    setPersistence(auth, browserLocalPersistence);
+
+    let role = null;
+    let accountData = {};
+    let transactionData = {};
+
+    function escapeHtml(text) {
+      return String(text ?? "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatSh(value) {
+      return Number(value || 0).toLocaleString("ko-KR");
+    }
+
+    function showPanels(user) {
+      document.getElementById("guestPanel").classList.toggle("hidden", !!user);
+      document.getElementById("studentPanel").classList.toggle("hidden", !user);
+      document.getElementById("teacherPanel").classList.toggle("hidden", !(user && (role === "teacher" || role === "admin")));
+    }
+
+    async function loadRole(user) {
+      role = null;
+      const snap = await get(ref(db, `TeacherUID/${user.uid}`));
+      if (snap.exists()) {
+        const value = String(snap.val()).toLowerCase();
+        if (value === "admin" || value === "teacher") role = value;
+      }
+    }
+
+    function renderMyAccount(user) {
+      const balance = accountData[user.uid]?.balance || 0;
+      document.getElementById("myBalance").textContent = formatSh(balance);
+
+      const rows = Object.values(transactionData)
+        .filter(t => t.uid === user.uid)
+        .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+      const box = document.getElementById("myHistory");
+      document.getElementById("historyStatus").textContent = `${rows.length}건`;
+
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty small">사용 내역이 없습니다.</div>';
+        return;
+      }
+
+      box.innerHTML = rows.map(t => {
+        const positive = Number(t.amount) >= 0;
+        return `<div class="history-row">
+          <div>
+            <b>${escapeHtml(t.reason || "거래")}</b>
+            <div class="muted">${escapeHtml(t.createdAt || "")} · 처리자 ${escapeHtml(t.actorUid || "-")}</div>
+          </div>
+          <strong class="${positive ? "plus" : "minus"}">${positive ? "+" : ""}${formatSh(t.amount)} sh</strong>
+        </div>`;
+      }).join("");
+    }
+
+    function renderTeacherData() {
+      const accounts = Object.entries(accountData).sort((a,b) =>
+        Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
+      );
+
+      const box = document.getElementById("allAccounts");
+      if (!accounts.length) {
+        box.innerHTML = '<div class="empty small">계좌가 없습니다.</div>';
+      } else {
+        box.innerHTML = accounts.map(([uid, a]) => `
+          <div class="account-row">
+            <div>
+              <b>${escapeHtml(a.name || uid)}</b>
+              <div class="muted">${escapeHtml(uid)}</div>
+            </div>
+            <strong>${formatSh(a.balance)} sh</strong>
+          </div>
+        `).join("");
+      }
+
+      const rows = Object.values(transactionData)
+        .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+      document.getElementById("allHistory").innerHTML = rows.length
+        ? rows.map(t => `<div class="history-row">
+            <div>
+              <b>${escapeHtml(t.reason || "거래")}</b>
+              <div class="muted">대상 UID: ${escapeHtml(t.uid)} · 처리자: ${escapeHtml(t.actorUid || "-")} · ${escapeHtml(t.createdAt || "")}</div>
+            </div>
+            <strong class="${Number(t.amount) >= 0 ? "plus" : "minus"}">${Number(t.amount) >= 0 ? "+" : ""}${formatSh(t.amount)} sh</strong>
+          </div>`).join("")
+        : '<div class="empty small">거래 내역이 없습니다.</div>';
+    }
+
+    function subscribeData(user) {
+      onValue(ref(db, "olbk/accounts"), snap => {
+        accountData = snap.exists() ? snap.val() : {};
+        renderMyAccount(user);
+        if (role === "teacher" || role === "admin") renderTeacherData();
+      });
+
+      onValue(ref(db, "olbk/transactions"), snap => {
+        transactionData = snap.exists() ? snap.val() : {};
+        renderMyAccount(user);
+        if (role === "teacher" || role === "admin") renderTeacherData();
+      });
+    }
+
+    window.handleLogin = async () => {
+      const name = document.getElementById("loginName").value.trim();
+      const pw = document.getElementById("loginPw").value.trim();
+      const error = document.getElementById("loginError");
+
+      if (!name || !pw) {
+        error.textContent = "이름과 비밀번호를 입력하세요.";
+        return;
+      }
+
+      try {
+        const email = `${name}@school.jjy0205.site`;
+        const credential = await signInWithEmailAndPassword(auth, email, pw);
+        closeLoginModal();
+        document.getElementById("loginName").value = "";
+        document.getElementById("loginPw").value = "";
+        await loadRole(credential.user);
+        showPanels(credential.user);
+        subscribeData(credential.user);
+      } catch (e) {
+        console.error(e);
+        error.textContent = "로그인 정보가 올바르지 않습니다.";
+      }
+    };
+
+    window.adjustBalance = async () => {
+      const user = auth.currentUser;
+      const targetUid = document.getElementById("targetUid").value.trim();
+      const amount = Number(document.getElementById("amount").value);
+      const reason = document.getElementById("reason").value.trim();
+      const error = document.getElementById("adjustError");
+
+      error.textContent = "";
+
+      if (!user || !(role === "teacher" || role === "admin")) {
+        error.textContent = "교사 또는 관리자만 사용할 수 있습니다.";
+        return;
+      }
+      if (!targetUid || !Number.isInteger(amount) || amount === 0) {
+        error.textContent = "학생 UID와 0이 아닌 정수 sh 금액을 입력하세요.";
+        return;
+      }
+      if (!reason) {
+        error.textContent = "사유를 입력하세요.";
+        return;
+      }
+
+      try {
+        const accountRef = ref(db, `olbk/accounts/${targetUid}/balance`);
+        await runTransaction(accountRef, current => Number(current || 0) + amount);
+
+        await push(ref(db, "olbk/transactions"), {
+          uid: targetUid,
+          amount,
+          reason,
+          actorUid: user.uid,
+          actorRole: role,
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById("amount").value = "";
+        document.getElementById("reason").value = "";
+        alert(`${formatSh(amount)} sh가 반영되었습니다.`);
+      } catch (e) {
+        console.error(e);
+        error.textContent = "거래 처리에 실패했습니다. Firebase Rules도 확인하세요.";
+      }
+    };
+
+    window.handleLogout = async () => {
+      await signOut(auth);
+    };
+
+    window.openLoginModal = () => {
+      document.getElementById("loginError").textContent = "";
+      document.getElementById("loginModal").classList.remove("hidden");
+    };
+
+    window.closeLoginModal = () => {
+      document.getElementById("loginModal").classList.add("hidden");
+    };
+
+    onAuthStateChanged(auth, async user => {
+      const label = document.getElementById("userLabel");
+      document.getElementById("btnLogin").classList.toggle("hidden", !!user);
+      document.getElementById("btnLogout").classList.toggle("hidden", !user);
+
+      if (!user) {
+        role = null;
+        showPanels(null);
+        label.textContent = "비로그인 상태";
+        return;
+      }
+
+      await loadRole(user);
+      const roleText = role ? ` · ${role}` : "";
+      label.textContent = `👤 ${user.email?.split("@")[0] || "사용자"}${roleText}`;
+      showPanels(user);
+      subscribeData(user);
+    });
+  </script>
+</body>
+
+</html>
