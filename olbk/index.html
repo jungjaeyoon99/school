@@ -238,6 +238,7 @@
       ref,
       get,
       set,
+      update,
       onValue,
       push,
       runTransaction
@@ -272,18 +273,28 @@
       return Number(value || 0).toLocaleString("ko-KR");
     }
 
+    // IP 조회 함수 (실패시 'Unknown' 처리)
+    async function getClientIp() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip || "Unknown";
+      } catch (e) {
+        return "Unknown";
+      }
+    }
+
     // UID를 기반으로 학생 이름/이메일 반환
     function getStudentName(uid) {
       if (!uid) return "알 수 없음";
       if (accountData[uid]?.name) return accountData[uid].name;
       if (accountData[uid]?.email) return accountData[uid].email.split("@")[0];
       
-      // 현재 로그인 유저 본인인 경우
       if (auth.currentUser && auth.currentUser.uid === uid) {
         if (auth.currentUser.displayName) return auth.currentUser.displayName;
         if (auth.currentUser.email) return auth.currentUser.email.split("@")[0];
       }
-      return uid; // 매핑되지 않은 경우 UID 표기
+      return uid;
     }
 
     function showPanels(user) {
@@ -339,7 +350,7 @@
         }).join("");
       }
 
-      // 4. 리더보드 (전체 계정 표시)
+      // 4. 리더보드
       const sortedAccounts = Object.entries(accountData).sort((a,b) =>
         Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
       );
@@ -365,14 +376,12 @@
     }
 
     function renderTeacherData() {
-      // 전체 학생 가나다순 정렬
       const accounts = Object.entries(accountData).sort((a,b) => {
         const nameA = getStudentName(a[0]);
         const nameB = getStudentName(b[0]);
         return nameA.localeCompare(nameB, "ko-KR");
       });
 
-      // 교사 관람용 계좌 리스트
       const box = document.getElementById("allAccounts");
       if (!accounts.length) {
         box.innerHTML = '<div class="empty small">등록된 계좌가 없습니다.</div>';
@@ -392,7 +401,6 @@
         }).join("");
       }
 
-      // 교사 지급용 전체 학생 체크박스 목록
       const checkboxBox = document.getElementById("studentCheckboxList");
       if (!accounts.length) {
         checkboxBox.innerHTML = '<div class="muted" style="text-align:center; padding:10px;">등록된 학생이 없습니다.</div>';
@@ -408,7 +416,6 @@
         }).join("");
       }
 
-      // 전체 거래 내역 (UID 대신 학생 이름 표시)
       const rows = Object.values(transactionData)
         .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
@@ -468,34 +475,55 @@
         return;
       }
 
-      // 로그인 인증 성공 처리 후 모달 닫기
       closeLoginModal();
       document.getElementById("loginName").value = "";
       document.getElementById("loginPw").value = "";
 
       const user = credential.user;
+      const parsedName = name.includes("@") ? name.split("@")[0] : name;
+      const nowIso = new Date().toISOString();
 
-      // DB 및 프로필에 학생 정보(이름, 이메일) 백그라운드 등록
+      // 1. log/olbkLoginTime 에 로그인 로그 저장
       try {
-        const parsedName = name.includes("@") ? name.split("@")[0] : name;
+        const userIp = await getClientIp();
+        await push(ref(db, "log/olbkLoginTime"), {
+          client_metadata: {
+            access_time: nowIso,
+            ip: userIp,
+            userAgent: navigator.userAgent
+          },
+          email: user.email,
+          login_time: nowIso,
+          uid: user.uid
+        });
+      } catch (e) {
+        console.warn("로그 저장 권한 오류:", e);
+      }
+
+      // 2. 학생 이름 및 계정 정보 동기화 (권한 거부 문제 해결 방식)
+      try {
         if (!user.displayName) {
           await updateProfile(user, { displayName: parsedName });
         }
 
         const accountRef = ref(db, `olbk/accounts/${user.uid}`);
         const snap = await get(accountRef);
+
         if (!snap.exists()) {
-          await set(accountRef, {
+          // 계좌 데이터가 없으면 이름과 이메일 기록 (잔고는 교사가 부여)
+          await update(accountRef, {
             name: parsedName,
-            email: user.email,
-            balance: 0
+            email: user.email
           });
         } else {
-          if (!snap.val().name) await set(ref(db, `olbk/accounts/${user.uid}/name`), parsedName);
-          if (!snap.val().email) await set(ref(db, `olbk/accounts/${user.uid}/email`), user.email);
+          // 기존 계좌가 있다면 이름/이메일만 업데이트
+          await update(accountRef, {
+            name: parsedName,
+            email: user.email
+          });
         }
       } catch (e) {
-        console.warn("프로필 업데이트 경고:", e);
+        console.warn("프로필 DB 동기화 오류:", e);
       }
 
       await loadRole(user);
@@ -512,7 +540,6 @@
       }
 
       try {
-        // 가상 UID 키 생성 후 명단 미리 추가
         const newRef = push(ref(db, "olbk/accounts"));
         await set(newRef, {
           name: studentName,
