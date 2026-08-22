@@ -58,6 +58,7 @@
     .modal-content button { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
+    .notification-help-message { color: #333; font-size: 0.9rem; line-height: 1.65; background: #f7f9fc; padding: 12px; border-radius: 8px; }
   </style>
 </head>
 <body>
@@ -108,6 +109,15 @@
   </div>
 
   <footer>&copy; 2026 Jaeyun Jeong. All rights reserved.</footer>
+
+  <div id="notificationHelpModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 420px; width: calc(100% - 32px);">
+      <h2 id="notificationHelpTitle">🔔 알림 안내</h2>
+      <div id="notificationHelpMessage" class="notification-help-message"></div>
+      <button onclick="openInSafari()"> Safari에서 열기</button>
+      <button onclick="closeNotificationHelpModal()" style="background-color: #888;">닫기</button>
+    </div>
+  </div>
 
   <div id="loginModal" class="modal hidden">
     <div class="modal-content">
@@ -282,18 +292,97 @@
       };
     }
 
-    window.enableNotifications = () => {
-      if (!("Notification" in window)) {
-        alert("이 브라우저는 알림 기능을 지원하지 않습니다. P.S. 아이폰이고 카카오톡에서 열고 있다면, 아래 버튼을 통해 safari 로 열어주세요. 그 후 safari에서 홈 화면에 추가를 누르고 홈 화면에 있는 아이콘을 눌러 접속한다면 알림 기능을 활성화 시킬 수 있습니다.");
+    async function saveAlarmSetLog(permission, statusMessage = "") {
+      const user = auth.currentUser;
+      if (!user) {
+        console.warn("알림 설정 로그 저장 생략: 로그인 상태가 아닙니다.");
         return;
       }
-      Notification.requestPermission().then(permission => {
+
+      try {
+        const clientMeta = await collectClientMetadata();
+        const logRef = ref(db, 'log/AlarmSet');
+        const newLogRef = push(logRef);
+
+        await set(newLogRef, {
+          uid: user.uid,
+          email: user.email,
+          permission: permission,
+          statusMessage: statusMessage,
+          setting_time: new Date().toISOString(),
+          client_metadata: clientMeta
+        });
+      } catch (error) {
+        console.error("알림 설정 로그 저장 실패:", error);
+      }
+    }
+
+    window.openInSafari = () => {
+      const currentUrl = window.location.href;
+      const opened = window.open(currentUrl, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        alert("Safari로 자동 전환할 수 없습니다. 카카오톡의 공유 메뉴에서 'Safari로 열기'를 선택해주세요.");
+      }
+    };
+
+    window.enableNotifications = async () => {
+      if (!("Notification" in window)) {
+        await saveAlarmSetLog(
+          "unsupported",
+          "이 브라우저는 알림 기능을 지원하지 않습니다."
+        );
+        showNotificationHelpModal(false);
+        return;
+      }
+
+      try {
+        const permission = await Notification.requestPermission();
+
         if (permission === "granted") {
+          await saveAlarmSetLog("granted", "브라우저 알림이 허용되었습니다.");
           alert("브라우저 알림이 활성화되었습니다. 30분 주기로 수행평가를 확인합니다.");
-        } else {
-          alert("알림 권한이 거부되었습니다.");
+          return;
         }
-      });
+
+        if (permission === "denied") {
+          await saveAlarmSetLog("denied", "브라우저 알림 권한이 거부되었습니다.");
+          showNotificationHelpModal(true);
+          return;
+        }
+
+        await saveAlarmSetLog(
+          permission,
+          "알림 권한 선택이 완료되지 않았습니다."
+        );
+      } catch (error) {
+        console.error("알림 권한 요청 실패:", error);
+        await saveAlarmSetLog("error", error.message || "알림 권한 요청 중 오류가 발생했습니다.");
+        alert("알림 설정 중 오류가 발생했습니다.");
+      }
+    };
+
+    function showNotificationHelpModal(denied) {
+      const modal = document.getElementById('notificationHelpModal');
+      const title = document.getElementById('notificationHelpTitle');
+      const message = document.getElementById('notificationHelpMessage');
+
+      title.innerText = denied
+        ? "🔔 알림 권한이 거부되었습니다"
+        : "🔔 이 브라우저는 알림 기능을 지원하지 않습니다";
+
+      message.innerHTML = denied
+        ? `브라우저 알림 권한이 거부되어 알림을 사용할 수 없습니다.<br><br>
+           <b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>
+           그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`
+        : `이 브라우저는 알림 기능을 지원하지 않습니다.<br><br>
+           <b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>
+           그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`;
+
+      modal.classList.remove('hidden');
+    }
+
+    window.closeNotificationHelpModal = () => {
+      document.getElementById('notificationHelpModal').classList.add('hidden');
     };
 
     setInterval(() => {
