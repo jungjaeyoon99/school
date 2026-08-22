@@ -284,7 +284,7 @@
 
     window.enableNotifications = () => {
       if (!("Notification" in window)) {
-        alert("이 브라우저는 알림 기능을 지원하지 않습니다.");
+        alert("이 브라우저는 알림 기능을 지원하지 않습니다. P.S. 아이폰이고 카카오톡에서 열고 있다면, 아래 버튼을 통해 safari 로 열어주세요. 그 후 safari에서 홈 화면에 추가를 누르고 홈 화면에 있는 아이콘을 눌러 접속한다면 알림 기능을 활성화 시킬 수 있습니다.");
         return;
       }
       Notification.requestPermission().then(permission => {
