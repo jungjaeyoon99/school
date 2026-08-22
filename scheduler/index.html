@@ -59,9 +59,11 @@
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
     .notification-help-message { color: #333; font-size: 0.9rem; line-height: 1.65; background: #f7f9fc; padding: 12px; border-radius: 8px; }
-    .privacy-box { color: #333; font-size: 0.88rem; line-height: 1.65; background: #f7f9fc; padding: 12px; border-radius: 8px; max-height: 260px; overflow-y: auto; }
     .privacy-consent { display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; line-height: 1.5; }
     .privacy-consent input { margin-top: 3px; width: auto; }
+    .privacy-link { color: #4A90E2; background: none; border: none; padding: 0; font-size: 0.85rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
+    .privacy-terms-modal .modal-content { max-width: 460px; width: calc(100% - 32px); }
+    .privacy-terms-box { color: #333; font-size: 0.88rem; line-height: 1.65; background: #f7f9fc; padding: 14px; border-radius: 8px; max-height: 55vh; overflow-y: auto; }
   </style>
 </head>
 <body>
@@ -128,29 +130,34 @@
       <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
 
-      <div class="privacy-box">
-        <b>개인정보 이용약관</b><br><br>
-        <b>1. 수집 목적</b><br>
-        로그인 및 서비스 이용 과정의 접속 기록을 관리하고 서비스 보안을 유지하기 위해 최소한의 정보를 수집합니다.<br><br>
-
-        <b>2. 수집 항목</b><br>
-        접속 IP, 접속 시각, 브라우저 및 OS 정보(User-Agent)만 수집합니다.<br><br>
-
-        <b>3. 보유 및 폐기 기간</b><br>
-        수집된 로그는 2학기 내내 저장되며, 내년 1학기부터 폐기합니다.<br><br>
-
-        <b>4. 제3자 제공</b><br>
-        위 수집 정보는 본 서비스의 로그 관리 목적 외의 용도로 사용하거나 제3자에게 제공하지 않습니다.
-      </div>
-
       <label class="privacy-consent">
         <input type="checkbox" id="privacyConsent">
-        <span>개인정보 이용약관을 읽었으며 이에 동의합니다. 동의해야 로그인할 수 있습니다.</span>
+        <span>
+          개인정보 이용약관에 동의합니다.
+          <button type="button" class="privacy-link" onclick="openPrivacyTermsModal()">개인정보 이용약관 보기</button>
+        </span>
       </label>
 
       <div id="loginError" class="error-msg"></div>
       <button onclick="handleLogin()">동의하고 로그인</button>
       <button onclick="closeLoginModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
+
+  <div id="privacyTermsModal" class="modal hidden privacy-terms-modal">
+    <div class="modal-content">
+      <h2>개인정보 이용약관</h2>
+      <div class="privacy-terms-box">
+        <b>1. 수집 목적</b><br>
+        로그인 및 서비스 이용 과정의 접속 기록을 관리하고 서비스 보안을 유지하기 위해 최소한의 정보를 수집합니다.<br><br>
+        <b>2. 수집 항목</b><br>
+        접속 IP, 접속 시각, 브라우저 및 OS 정보(User-Agent)만 수집합니다.<br><br>
+        <b>3. 보유 및 폐기 기간</b><br>
+        수집된 로그는 2학기 내내 저장되며, 내년 1학기부터 폐기합니다.<br><br>
+        <b>4. 제3자 제공</b><br>
+        위 수집 정보는 본 서비스의 로그 관리 목적 외의 용도로 사용하거나 제3자에게 제공하지 않습니다.
+      </div>
+      <button onclick="closePrivacyTermsModal()" style="background-color: #888;">닫기</button>
     </div>
   </div>
 
@@ -725,6 +732,14 @@
     };
     window.closeLoginModal = () => {
       document.getElementById('loginModal').classList.add('hidden');
+    };
+
+    window.openPrivacyTermsModal = () => {
+      document.getElementById('privacyTermsModal').classList.remove('hidden');
+    };
+
+    window.closePrivacyTermsModal = () => {
+      document.getElementById('privacyTermsModal').classList.add('hidden');
     };
     window.openChangePwModal = () => {
       document.getElementById('pwChangeError').innerText = '';
