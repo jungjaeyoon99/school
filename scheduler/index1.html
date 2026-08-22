@@ -7,53 +7,41 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; min-height: 100vh; }
-    
-    /* Header */
     header { background-color: #4A90E2; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     header h1 { font-size: 1.2rem; }
-    .auth-status { font-size: 0.9rem; display: flex; gap: 8px; align-items: center; }
+    .auth-status { font-size: 0.9rem; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
     .btn-sm { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: bold; }
     .btn-login { background-color: white; color: #4A90E2; }
     .btn-logout { background-color: #e74c3c; color: white; }
     .btn-noti { background-color: #f39c12; color: white; }
 
-    /* Main Container (Chat-like Feed) */
     main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-    
-    /* Schedule Cards */
     .schedule-card { background-color: white; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%; max-width: 500px; position: relative; transition: all 0.2s ease; }
-    
-    /* 날짜 상태별 스타일 */
-    .schedule-card.status-today { border-left: 6px solid #e74c3c; background-color: #fff8f8; } /* 당일+내일: 빨강 */
-    .schedule-card.status-d3 { border-left: 6px solid #f39c12; background-color: #fffcf5; }    /* 3일 이내: 주황 */
-    .schedule-card.status-week { border-left: 6px solid #3498db; }  /* 1주일 이내: 파랑 */
-    .schedule-card.status-future { border-left: 6px solid #95a5a6; }/* 그 이후: 회색 */
-    .schedule-card.status-expired { border-left: 6px solid #7f8c8d; filter: grayscale(100%); opacity: 0.55; background-color: #f2f2f2; } /* 날짜 지난 것: 흑백 */
-    
+    .schedule-card.status-today { border-left: 6px solid #e74c3c; background-color: #fff8f8; }
+    .schedule-card.status-d3 { border-left: 6px solid #f39c12; background-color: #fffcf5; }
+    .schedule-card.status-week { border-left: 6px solid #3498db; }
+    .schedule-card.status-future { border-left: 6px solid #95a5a6; }
+    .schedule-card.status-expired { border-left: 6px solid #7f8c8d; filter: grayscale(100%); opacity: 0.55; background-color: #f2f2f2; }
+
     .card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85rem; color: #666; }
     .badge-subject { background-color: #eef2f7; color: #333; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
-    
-    /* 중요도별 뱃지 */
     .badge-priority { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; }
     .badge-priority.crazy { background-color: #9b59b6; }
     .badge-priority.high { background-color: #e74c3c; }
     .badge-priority.medium { background-color: #f39c12; }
     .badge-priority.low { background-color: #2ecc71; }
     .badge-priority.neverstudy { background-color: #95a5a6; }
-
     .date-badge { margin-left: auto; font-weight: bold; color: #2c3e50; background: #eef6ff; padding: 2px 8px; border-radius: 6px; border: 1px solid #d0e3ff; }
     .status-expired .date-badge { background: #e0e0e0; border-color: #ccc; color: #666; }
-
-    .card-title { font-size: 1rem; color: #2c3e50; margin: 8px 0; word-break: break-all; line-height: 1.4; }
-    .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
-
-    /* 편집 및 삭제 버튼 */
-    .btn-edit { background: none; border: none; color: #3498db; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 4px; }
+    .card-title { font-size: 1rem; color: #2c3e50; margin: 8px 0; word-break: break-word; line-height: 1.4; white-space: pre-wrap; }
+    .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
+    .action-buttons { display: flex; gap: 4px; }
+    .btn-edit, .btn-delete { background: none; border: none; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .btn-edit { color: #3498db; }
     .btn-edit:hover { background-color: #eaf4fc; }
-    .btn-delete { background: none; border: none; color: #e74c3c; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .btn-delete { color: #e74c3c; }
     .btn-delete:hover { background-color: #fbeae8; }
 
-    /* Input Bar */
     .input-bar { background-color: white; border-top: 1px solid #ddd; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
     .controls-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .controls-row input, .controls-row select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; }
@@ -61,11 +49,8 @@
     .message-row input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 0.95rem; }
     .btn-send { background-color: #4A90E2; color: white; border: none; padding: 0 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
     .btn-send:disabled { background-color: #ccc; cursor: not-allowed; }
-
-    /* Footer */
     footer { text-align: center; padding: 14px; background-color: #ffffff; color: #7f8c8d; font-size: 0.8rem; border-top: 1px solid #e2e8f0; margin-top: auto; }
 
-    /* Login & Change PW Modal */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
     .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; }
@@ -76,8 +61,6 @@
   </style>
 </head>
 <body>
-
-  <!-- Header -->
   <header>
     <h1>📅 중계중 1-2 학급 스케줄러</h1>
     <div class="auth-status">
@@ -89,12 +72,10 @@
     </div>
   </header>
 
-  <!-- Schedule Feed -->
   <main id="scheduleFeed">
     <div style="text-align: center; color: #888; margin-top: 20px;">스케줄을 불러오는 중입니다...</div>
   </main>
 
-  <!-- Input Bar -->
   <div class="input-bar">
     <div class="controls-row">
       <input type="date" id="inputDate">
@@ -126,12 +107,8 @@
     </div>
   </div>
 
-  <!-- Copyright Footer -->
-  <footer>
-    &copy; 2026 Jaeyun Jeong. All rights reserved.
-  </footer>
+  <footer>&copy; 2026 Jaeyun Jeong. All rights reserved.</footer>
 
-  <!-- Login Modal -->
   <div id="loginModal" class="modal hidden">
     <div class="modal-content">
       <h2>학생 로그인</h2>
@@ -143,7 +120,6 @@
     </div>
   </div>
 
-  <!-- Change Password Modal -->
   <div id="changePwModal" class="modal hidden">
     <div class="modal-content">
       <h2>비밀번호 변경</h2>
@@ -156,13 +132,12 @@
     </div>
   </div>
 
-  <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      signOut, 
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      signOut,
       onAuthStateChanged,
       setPersistence,
       browserLocalPersistence,
@@ -170,23 +145,19 @@
       EmailAuthProvider,
       reauthenticateWithCredential
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { 
-      getDatabase, 
-      ref, 
-      push, 
+    import {
+      getDatabase,
+      ref,
+      push,
       set,
-      update, 
-      onValue, 
-      get, 
-      child 
+      update,
+      onValue
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // URL Path 고정
     if (window.location.protocol !== 'file:' && window.location.pathname !== '/scheduler') {
       history.replaceState(null, '', '/scheduler');
     }
 
-    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDJkRcnDC98-_meOyBAL1Pxnfnqqobu0Sc",
       authDomain: "school-scheduler-site.firebaseapp.com",
@@ -199,8 +170,13 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-
     setPersistence(auth, browserLocalPersistence);
+
+    // 현재 DB export의 roles 구조에 맞춘 UI용 관리자 UID.
+    // 실제 권한은 Firebase Rules가 최종적으로 결정합니다.
+    const ADMIN_UIDS = new Set([
+      "5XwWbVfePJRxaEIp7kExaFb2PUm1"
+    ]);
 
     let currentUserProfile = null;
     let cachedSchedules = null;
@@ -209,7 +185,7 @@
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
 
     function escapeHtml(text) {
-      return String(text || '')
+      return String(text ?? '')
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -218,7 +194,7 @@
     }
 
     function getPriorityText(priority) {
-      switch(priority) {
+      switch (priority) {
         case 'crazy': return '어마무시함';
         case 'high': return '높음';
         case 'medium': return '보통';
@@ -228,13 +204,19 @@
       }
     }
 
-    // 날짜 상태 계산 함수 (오늘과의 차이 일수 계산)
     function getDateStatus(targetDateStr) {
+      if (!targetDateStr || targetDateStr === 'NaN') {
+        return { class: 'status-future', tag: '날짜 오류', expired: false };
+      }
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       const target = new Date(targetDateStr);
       target.setHours(0, 0, 0, 0);
+
+      if (Number.isNaN(target.getTime())) {
+        return { class: 'status-future', tag: '날짜 오류', expired: false };
+      }
 
       const diffTime = target.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -247,7 +229,6 @@
       return { class: 'status-future', tag: `🗓️ D-${diffDays}`, expired: false };
     }
 
-    // 🌐 클라이언트 메타데이터 수집 함수 (원형 보존)
     async function collectClientMetadata() {
       let publicIp = "N/A";
       let ipDetails = {};
@@ -270,7 +251,7 @@
           const backupRes = await fetch('https://api.ipify.org?format=json');
           if (backupRes.ok) {
             const backupData = await backupRes.json();
-            publicIp = backupData.ip;
+            publicIp = backupData.ip || "N/A";
           }
         } catch (err) {
           publicIp = "Lookup Failed";
@@ -301,7 +282,6 @@
       };
     }
 
-    // 🔔 브라우저 알림 권한 신청 및 주기적 알림 (30분 주기)
     window.enableNotifications = () => {
       if (!("Notification" in window)) {
         alert("이 브라우저는 알림 기능을 지원하지 않습니다.");
@@ -316,7 +296,6 @@
       });
     };
 
-    // 30분(1800000 ms)마다 백그라운드 스케줄 확인 후 알림 전송
     setInterval(() => {
       if ("Notification" in window && Notification.permission === "granted" && cachedSchedules) {
         const activeList = Object.values(cachedSchedules).filter(item => !item.deleted);
@@ -324,8 +303,8 @@
 
         activeList.forEach(item => {
           const status = getDateStatus(item.date);
-          if (status.tag.includes('오늘') || status.tag.includes('내일') || status.tag.includes('D-')) {
-            if (!status.expired) urgentCount++;
+          if ((status.tag.includes('오늘') || status.tag.includes('내일') || status.tag.includes('D-')) && !status.expired) {
+            urgentCount++;
           }
         });
 
@@ -338,7 +317,6 @@
       }
     }, 30 * 60 * 1000);
 
-    // Auth 상태 변경 감지 및 관리자(Admin) 권한 판별
     onAuthStateChanged(auth, async (user) => {
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
@@ -348,24 +326,14 @@
       const btnSend = document.getElementById('btnSend');
 
       if (user) {
-        try {
-          const snapshot = await get(child(ref(db), `accounts/${user.uid}`));
-          if (snapshot.exists()) {
-            currentUserProfile = snapshot.val();
-            isAdmin = (currentUserProfile.role === 'admin'); // 관리자 역할 체킹
-            userLabel.innerText = `👤 ${currentUserProfile.name}님${isAdmin ? ' (관리자)' : ''}`;
-          } else {
-            const fallbackName = user.email.split('@')[0];
-            userLabel.innerText = `👤 ${fallbackName}님`;
-            currentUserProfile = { name: fallbackName, role: 'user' };
-            isAdmin = false;
-          }
-        } catch (e) {
-          console.error("계정 데이터 조회 실패:", e);
-          userLabel.innerText = `👤 로그인됨`;
-          isAdmin = false;
-        }
+        const fallbackName = user.email ? user.email.split('@')[0] : '사용자';
+        isAdmin = ADMIN_UIDS.has(user.uid);
+        currentUserProfile = {
+          name: fallbackName,
+          role: isAdmin ? 'admin' : 'user'
+        };
 
+        userLabel.innerText = `👤 ${fallbackName}님${isAdmin ? ' (관리자)' : ''}`;
         btnLogin.classList.add('hidden');
         btnChangePw.classList.remove('hidden');
         btnLogout.classList.remove('hidden');
@@ -384,12 +352,9 @@
         inputContent.placeholder = "로그인 후 수행평가 스케줄을 입력할 수 있습니다...";
       }
 
-      if (cachedSchedules) {
-        renderSchedules(cachedSchedules);
-      }
+      if (cachedSchedules) renderSchedules(cachedSchedules);
     });
 
-    // 로그인 및 log/LoginTime 기록 (원형 보존)
     window.handleLogin = async () => {
       const name = document.getElementById('loginName').value.trim();
       const pw = document.getElementById('loginPw').value.trim();
@@ -410,7 +375,6 @@
         document.getElementById('loginName').value = '';
         document.getElementById('loginPw').value = '';
 
-        // 🚀 로그인 정보 및 수집 데이터 log/LoginTime 경로에 저장
         collectClientMetadata().then(async (clientMeta) => {
           const loginLogRef = ref(db, 'log/LoginTime');
           const newLoginLogRef = push(loginLogRef);
@@ -421,17 +385,14 @@
             client_metadata: clientMeta
           });
         }).catch(err => console.error("로그인 로그 기록 실패:", err));
-
       } catch (err) {
         console.error(err);
         errorEl.innerText = "로그인 정보가 올바르지 않습니다.";
       }
     };
 
-    // 로그아웃
     window.handleLogout = () => signOut(auth);
 
-    // 🔑 비밀번호 변경 및 log/PasswordChange 기록 (원형 보존)
     window.executeChangePassword = async () => {
       const errorEl = document.getElementById('pwChangeError');
       const currentPw = document.getElementById('currentPw').value.trim();
@@ -440,7 +401,6 @@
       const user = auth.currentUser;
 
       if (!user) return;
-
       if (!currentPw || !newPw || !newPwConfirm) {
         errorEl.innerText = "모든 항목을 입력해주세요.";
         return;
@@ -475,7 +435,6 @@
 
         alert("비밀번호가 성공적으로 변경되었습니다.");
         closeChangePwModal();
-
       } catch (error) {
         errorEl.style.color = "#e74c3c";
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
@@ -486,7 +445,6 @@
       }
     };
 
-    // 렌더링 로직 (관리자 권한 및 본인 작성 여부에 따른 편집/삭제 버튼 적용)
     function renderSchedules(snapshotValue) {
       const feed = document.getElementById('scheduleFeed');
       feed.innerHTML = '';
@@ -497,8 +455,6 @@
       }
 
       const list = Object.keys(snapshotValue).map(key => ({ id: key, ...snapshotValue[key] }));
-
-      // 삭제된 항목 필터링
       const visibleList = list.filter(item => !item.deleted);
 
       if (visibleList.length === 0) {
@@ -506,19 +462,17 @@
         return;
       }
 
-      // 날짜 상태 정보 계산 추가
       visibleList.forEach(item => {
         item.statusInfo = getDateStatus(item.date);
       });
 
-      // 정렬 조건:
-      // 1. 마감 안 된 스케줄이 우선(위), 마감된 스케줄은 나중(아래)
-      // 2. 각각 마감일 오름차순
       visibleList.sort((a, b) => {
-        if (a.statusInfo.expired !== b.statusInfo.expired) {
-          return a.statusInfo.expired ? 1 : -1;
-        }
-        return new Date(a.date) - new Date(b.date);
+        if (a.statusInfo.expired !== b.statusInfo.expired) return a.statusInfo.expired ? 1 : -1;
+        const aTime = new Date(a.date).getTime();
+        const bTime = new Date(b.date).getTime();
+        if (Number.isNaN(aTime)) return 1;
+        if (Number.isNaN(bTime)) return -1;
+        return aTime - bTime;
       });
 
       const currentUid = auth.currentUser ? auth.currentUser.uid : null;
@@ -527,61 +481,64 @@
         const card = document.createElement('div');
         const priorityClass = item.priority || 'medium';
         const statusInfo = item.statusInfo;
-
         card.className = `schedule-card ${statusInfo.class}`;
 
         const pText = getPriorityText(priorityClass);
-        
-        // 본인이 작성했거나 관리자(isAdmin)인 경우 수정 및 삭제 허용
-        const canManage = currentUid && (currentUid === item.authorUid || isAdmin);
-        
-        const actionButtonsHtml = canManage 
-          ? `<button class="btn-edit" onclick="editSchedule('${item.id}', '${item.authorUid}')">✏️ 편집</button>
-             <button class="btn-delete" onclick="deleteSchedule('${item.id}', '${item.authorUid}')">🗑️ 삭제</button>`
+        const canManage = !!currentUid && (currentUid === item.authorUid || isAdmin);
+
+        const actionButtonsHtml = canManage
+          ? `<div class="action-buttons">
+               <button class="btn-edit" onclick="editSchedule('${escapeJsArg(item.id)}')">✏️ 편집</button>
+               <button class="btn-delete" onclick="deleteSchedule('${escapeJsArg(item.id)}')">🗑️ 삭제</button>
+             </div>`
           : '';
 
         card.innerHTML = `
           <div class="card-header">
             <span class="badge-subject">${escapeHtml(item.subject || '일반')}</span>
-            <span class="badge-priority ${priorityClass}">중요도: ${pText}</span>
-            <span class="date-badge">${statusInfo.tag} (${escapeHtml(item.date)})</span>
+            <span class="badge-priority ${escapeHtml(priorityClass)}">중요도: ${pText}</span>
+            <span class="date-badge">${escapeHtml(statusInfo.tag)} (${escapeHtml(item.date || '')})</span>
           </div>
-          <div class="card-title">${escapeHtml(item.content)}</div>
+          <div class="card-title">${escapeHtml(item.content || '')}</div>
           <div class="card-footer">
-            <span>작성자: <b>${escapeHtml(item.authorName)}</b></span>
+            <span>작성자: <b>${escapeHtml(item.authorName || '학생')}</b></span>
             <div>
-              <span style="margin-right: 8px;">작성일: ${item.createdAt ? escapeHtml(item.createdAt.substring(0, 10)) : ''}</span>
+              <span style="margin-right: 8px;">작성일: ${item.createdAt ? escapeHtml(String(item.createdAt).substring(0, 10)) : ''}</span>
               ${actionButtonsHtml}
             </div>
           </div>
         `;
+
         feed.appendChild(card);
       });
     }
 
-    // DB 실시간 수신
+    function escapeJsArg(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
     const schedulesRef = ref(db, 'schedules');
     onValue(schedulesRef, (snapshot) => {
       cachedSchedules = snapshot.exists() ? snapshot.val() : null;
       renderSchedules(cachedSchedules);
     });
 
-    // ✏️ 스케줄 편집 기능 (본인 또는 관리자 전용)
-    window.editSchedule = async (scheduleId, authorUid) => {
-      if (!auth.currentUser) {
-        alert("로그인이 필요합니다.");
+    window.editSchedule = async (scheduleId) => {
+      const user = auth.currentUser;
+      const item = cachedSchedules && cachedSchedules[scheduleId];
+
+      if (!user || !item) {
+        alert("로그인이 필요하거나 스케줄을 찾을 수 없습니다.");
         return;
       }
 
-      if (auth.currentUser.uid !== authorUid && !isAdmin) {
+      if (user.uid !== item.authorUid && !isAdmin) {
         alert("본인이 작성한 스케줄이거나 관리자만 편집할 수 있습니다.");
         return;
       }
 
-      const currentContent = cachedSchedules && cachedSchedules[scheduleId] ? cachedSchedules[scheduleId].content : "";
-      const newContent = prompt("수정할 수행평가 내용을 입력하세요:", currentContent);
-
-      if (newContent === null) return; // 취소 누름
+      const newContent = prompt("수정할 수행평가 내용을 입력하세요:", item.content || "");
+      if (newContent === null) return;
       if (!newContent.trim()) {
         alert("내용을 입력해야 합니다.");
         return;
@@ -591,69 +548,67 @@
         await update(ref(db, `schedules/${scheduleId}`), {
           content: newContent.trim(),
           updatedAt: new Date().toISOString(),
-          updatedBy: auth.currentUser.uid
+          updatedBy: user.uid
         });
       } catch (err) {
         alert("편집 실패: " + err.message);
       }
     };
 
-    // 🗑️ 스케줄 삭제 기능 (소프트 삭제 / 본인 또는 관리자 전용)
-    window.deleteSchedule = async (scheduleId, authorUid) => {
-      if (!auth.currentUser) {
-        alert("로그인이 필요합니다.");
+    window.deleteSchedule = async (scheduleId) => {
+      const user = auth.currentUser;
+      const item = cachedSchedules && cachedSchedules[scheduleId];
+
+      if (!user || !item) {
+        alert("로그인이 필요하거나 스케줄을 찾을 수 없습니다.");
         return;
       }
 
-      if (auth.currentUser.uid !== authorUid && !isAdmin) {
+      if (user.uid !== item.authorUid && !isAdmin) {
         alert("본인이 작성한 스케줄이거나 관리자만 삭제할 수 있습니다.");
         return;
       }
 
-      if (!confirm("정말 이 스케줄을 삭제하시겠습니까?")) {
-        return;
-      }
+      if (!confirm("정말 이 스케줄을 삭제하시겠습니까?")) return;
 
       try {
         await update(ref(db, `schedules/${scheduleId}`), {
           deleted: true,
           deletedAt: new Date().toISOString(),
-          deletedBy: auth.currentUser.uid
+          deletedBy: user.uid
         });
       } catch (err) {
         alert("삭제 실패: " + err.message);
       }
     };
 
-    // 업로드
     window.uploadSchedule = async () => {
       const date = document.getElementById('inputDate').value;
       const subject = document.getElementById('inputSubject').value;
       const priority = document.getElementById('inputPriority').value;
       const content = document.getElementById('inputContent').value.trim();
+      const user = auth.currentUser;
 
       if (!date) {
         alert("날짜를 선택하세요.");
         return;
       }
-
       if (!content) {
         alert("수행평가 내용을 입력하세요.");
         return;
       }
-
-      if (!auth.currentUser || !currentUserProfile) {
+      if (!user || !currentUserProfile) {
         alert("로그인이 필요합니다.");
         return;
       }
 
       try {
         await push(ref(db, 'schedules'), {
-          date: date,
-          subject: subject,
-          priority: priority,
-          content: content,
-          authorUid: auth.currentUser.uid,
+          date,
+          subject,
+          priority,
+          content,
+          authorUid: user.uid,
           authorName: currentUserProfile.name || "학생",
           createdAt: new Date().toISOString(),
           deleted: false
@@ -665,7 +620,6 @@
       }
     };
 
-    // 모달 관리
     window.openLoginModal = () => {
       document.getElementById('loginError').innerText = '';
       document.getElementById('loginModal').classList.remove('hidden');
@@ -673,7 +627,6 @@
     window.closeLoginModal = () => {
       document.getElementById('loginModal').classList.add('hidden');
     };
-
     window.openChangePwModal = () => {
       document.getElementById('pwChangeError').innerText = '';
       document.getElementById('changePwModal').classList.remove('hidden');
