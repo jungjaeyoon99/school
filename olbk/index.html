@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>중계중 1-2 학급 스케줄러</title>
+  <title>OL Banking - 중계중 1-2</title>
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,34 +15,58 @@
   .btn-sm { padding:7px 12px; border:0; border-radius:6px; cursor:pointer; font-weight:700; }
   .btn-login { background:#fff; color:#1f5f8b; }
   .btn-logout { background:#e74c3c; color:#fff; }
-  main { max-width:900px; margin:0 auto; padding:22px 16px 90px; }
+  main { max-width:900px; margin:0 auto; padding:16px 16px 90px; }
+  
+  .security-note { background:#fff8e6; border:1px solid #ffe58f; border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:.78rem; color:#8a6d3b; display:flex; align-items:center; gap:6px; }
+  
   .panel { background:#fff; border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:16px; }
   .panel-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
   .panel-head h2 { font-size:1.05rem; }
-  .balance-card { background:linear-gradient(135deg,#1f5f8b,#287ba8); color:#fff; border-radius:14px; padding:22px; margin-bottom:20px; }
-  .balance-card .muted { color:rgba(255,255,255,.8); }
-  .balance { font-size:2.2rem; font-weight:800; margin-top:7px; }
-  .balance small { font-size:1rem; }
+  
+  .dashboard-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .balance-card { background:linear-gradient(135deg,#1f5f8b,#287ba8); color:#fff; border-radius:14px; padding:18px; }
+  .class-card { background:linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border-radius:14px; padding:18px; }
+  .card-label { font-size:.78rem; opacity:.88; }
+  .balance { font-size:1.8rem; font-weight:800; margin-top:5px; }
+  .balance small { font-size:.9rem; }
   .muted { color:#7f8c8d; font-size:.78rem; }
+  
   .history-list { display:flex; flex-direction:column; gap:8px; }
-  .history-row,.account-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid #edf0f2; border-radius:9px; }
-  .history-row strong,.account-row strong { white-space:nowrap; }
-  .plus { color:#168a4a; }
-  .minus { color:#d64b4b; }
-  .admin-grid { display:grid; grid-template-columns:minmax(250px,1fr) minmax(300px,1.2fr); gap:14px; }
+  .history-row,.account-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; border:1px solid #edf0f2; border-radius:9px; }
+  .plus { color:#168a4a; font-weight:700; }
+  .minus { color:#d64b4b; font-weight:700; }
+  
+  .admin-grid { display:grid; grid-template-columns:minmax(280px,1.1fr) minmax(280px,1fr); gap:14px; }
   .form-card { border:1px solid #e5e9ed; border-radius:10px; padding:14px; }
   .form-card h3 { font-size:.95rem; margin-bottom:12px; }
+  
   label { display:block; font-size:.8rem; font-weight:700; margin:9px 0 5px; }
   input { width:100%; padding:10px; border:1px solid #ccd3d8; border-radius:7px; outline:none; }
   input:focus { border-color:#1f5f8b; }
+  
+  /* 학생 선택 체크박스 목록 스타일 */
+  .student-select-box { border:1px solid #ccd3d8; border-radius:7px; max-height:160px; overflow-y:auto; padding:6px; margin-bottom:8px; background:#fafafa; }
+  .student-option { display:flex; align-items:center; gap:8px; padding:6px 8px; border-bottom:1px solid #eee; font-size:.85rem; cursor:pointer; }
+  .student-option:last-child { border-bottom:none; }
+  .student-option input[type="checkbox"] { width:auto; cursor:pointer; }
+  
+  .select-tools { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .btn-text { background:none; border:none; color:#1f5f8b; font-size:.75rem; font-weight:700; cursor:pointer; }
+  
   .primary { width:100%; margin-top:12px; padding:10px; border:0; border-radius:7px; background:#1f5f8b; color:#fff; font-weight:800; cursor:pointer; }
   .error-msg { color:#e74c3c; font-size:.78rem; margin-top:8px; min-height:18px; }
-  .security-note { background:#fff7df; border:1px solid #f0d98a; border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:.82rem; line-height:1.55; }
-  .account-list { display:flex; flex-direction:column; gap:7px; max-height:300px; overflow:auto; }
+  
+  .account-list { display:flex; flex-direction:column; gap:7px; max-height:320px; overflow-y:auto; }
+  .rank-badge { display:inline-block; min-width:22px; height:22px; line-height:22px; text-align:center; background:#e0e6ed; color:#455a64; border-radius:50%; font-size:.72rem; font-weight:800; margin-right:6px; }
+  .rank-1 { background:#ffd700; color:#5c4300; }
+  .rank-2 { background:#c0c0c0; color:#333; }
+  .rank-3 { background:#cd7f32; color:#fff; }
+  
   .transactions-head { margin-top:20px; }
   .empty { text-align:center; color:#7f8c8d; padding:34px 12px; }
   .empty.small { padding:20px 8px; font-size:.85rem; }
   .empty-icon { font-size:2.4rem; margin-bottom:8px; }
+  
   footer { position:fixed; bottom:0; width:100%; text-align:center; padding:11px; background:#fff; color:#8b969d; font-size:.75rem; border-top:1px solid #e4e8eb; }
   .modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; justify-content:center; align-items:center; z-index:100; }
   .modal-content { background:#fff; padding:22px; border-radius:12px; width:320px; display:flex; flex-direction:column; gap:10px; }
@@ -50,20 +74,21 @@
   .modal-content button { padding:10px; border:0; border-radius:7px; background:#1f5f8b; color:#fff; font-weight:700; cursor:pointer; }
   .privacy-note { background:#f5f7f9; padding:10px; border-radius:7px; color:#65727a; font-size:.78rem; line-height:1.5; }
   .hidden { display:none !important; }
+  
   @media (max-width:700px) {
     header { align-items:flex-start; flex-direction:column; }
+    .dashboard-cards { grid-template-columns:1fr; }
     .admin-grid { grid-template-columns:1fr; }
     .history-row,.account-row { align-items:flex-start; }
   }
 </style>
-
 </head>
 
 <body>
   <header>
     <div>
       <h1>🏦 OL Banking</h1>
-      <div class="sub">우리 반 전용 가상 화폐 · 단위: sh</div>
+      <div class="sub">중계중 1-2 전용 가상 화폐 · 단위: sh</div>
     </div>
     <div class="auth-status">
       <span id="userLabel">비로그인 상태</span>
@@ -73,48 +98,77 @@
   </header>
 
   <main>
+    <div class="security-note">
+      🔒 <b>보안 안내:</b> 학생 계정은 잔고·내역 및 리더보드 조회만 가능하며, 잔고 변경은 teacher/admin 권한으로 제한됩니다.
+    </div>
+
+    <!-- 학생/학급 메인 패널 -->
     <section id="studentPanel" class="panel hidden">
-      <div class="balance-card">
-        <div class="muted">현재 잔고</div>
-        <div class="balance"><span id="myBalance">0</span> <small>sh</small></div>
+      <div class="dashboard-cards">
+        <div class="balance-card">
+          <div class="card-label">내 현재 잔고</div>
+          <div class="balance"><span id="myBalance">0</span> <small>sh</small></div>
+        </div>
+        <div class="class-card">
+          <div class="card-label">우리 학급 전체 sh</div>
+          <div class="balance"><span id="totalClassBalance">0</span> <small>sh</small></div>
+        </div>
       </div>
 
-      <div class="panel-head">
-        <h2>내 사용 내역</h2>
-        <span id="historyStatus" class="muted">불러오는 중...</span>
+      <div class="admin-grid">
+        <div>
+          <div class="panel-head">
+            <h2>내 거래 내역</h2>
+            <span id="historyStatus" class="muted">불러오는 중...</span>
+          </div>
+          <div id="myHistory" class="history-list"></div>
+        </div>
+
+        <div>
+          <div class="panel-head">
+            <h2>🏆 학급 sh 리더보드</h2>
+          </div>
+          <div id="leaderboardList" class="account-list">불러오는 중...</div>
+        </div>
       </div>
-      <div id="myHistory" class="history-list"></div>
     </section>
 
-    
-      <div class="security-note">
-        <b>보안 안내</b>
-        <div>학생 계정은 잔고·거래 내역을 조회할 수만 있으며, 잔고 변경은 teacher 계정으로 제한됩니다.</div>
-      </div>
-
+    <!-- 교사/관리자 패널 -->
     <section id="teacherPanel" class="panel hidden">
       <div class="panel-head">
         <div>
           <h2>교사·관리자 금융 관리</h2>
-          <div class="muted">teacher로 등록된 계정만 사용할 수 있습니다.</div>
+          <div class="muted">teacher/admin 계정 전용 관리 도구입니다.</div>
         </div>
       </div>
 
       <div class="admin-grid">
         <div class="form-card">
-          <h3>화폐 할당 / 재배치</h3>
-          <label>학생 UID</label>
-          <input id="targetUid" placeholder="학생 Firebase UID">
+          <h3>화폐 지급 / 차감</h3>
+          
+          <div class="select-tools">
+            <label style="margin:0;">지급 대상 학생 선택</label>
+            <div>
+              <button type="button" class="btn-text" onclick="toggleSelectAll(true)">전체선택</button>
+              <button type="button" class="btn-text" onclick="toggleSelectAll(false)">해제</button>
+            </div>
+          </div>
+          <div id="studentCheckboxList" class="student-select-box">
+            <div class="muted" style="text-align:center; padding:10px;">학생 목록을 불러오는 중...</div>
+          </div>
+
           <label>변동 sh</label>
           <input id="amount" type="number" step="1" placeholder="예: 100 또는 -50">
+          
           <label>사유</label>
           <input id="reason" maxlength="100" placeholder="예: 학급 활동 보상">
-          <button class="primary" onclick="adjustBalance()">잔고 반영</button>
+          
+          <button class="primary" onclick="adjustBalance()">선택한 학생에게 반영</button>
           <div id="adjustError" class="error-msg"></div>
         </div>
 
         <div class="form-card">
-          <h3>전체 계좌</h3>
+          <h3>전체 계좌 현황</h3>
           <div id="allAccounts" class="account-list">불러오는 중...</div>
         </div>
       </div>
@@ -125,24 +179,26 @@
       <div id="allHistory" class="history-list"></div>
     </section>
 
+    <!-- 게스트 안내 패널 -->
     <section id="guestPanel" class="panel">
       <div class="empty">
         <div class="empty-icon">🏦</div>
-        <h2>OL Banking</h2>
-        <p>로그인하면 현재 잔고와 사용 내역을 확인할 수 있습니다.</p>
+        <h2>OL Banking (중계중 1-2)</h2>
+        <p>로그인하면 내 잔고, 학급 리더보드, 사용 내역을 확인할 수 있습니다.</p>
       </div>
     </section>
   </main>
 
   <footer>© 2026 Jaeyun Jeong · OL Banking · 가상 화폐 sh</footer>
 
+  <!-- 로그인 모달 -->
   <div id="loginModal" class="modal hidden">
     <div class="modal-content">
       <h2>학생 로그인</h2>
       <input type="text" id="loginName" placeholder="이름 (예: 홍길동)" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <input type="password" id="loginPw" placeholder="비밀번호" onkeyup="if(window.event.keyCode==13){handleLogin()}">
       <div class="privacy-note">
-        기존 스케줄러와 동일한 Firebase 계정을 사용합니다.
+        학급 서비스용 Firebase 계정을 사용합니다.
       </div>
       <div id="loginError" class="error-msg"></div>
       <button onclick="handleLogin()">로그인</button>
@@ -206,17 +262,29 @@
 
     async function loadRole(user) {
       role = null;
-      const snap = await get(ref(db, `TeacherUID/${user.uid}`));
-      if (snap.exists()) {
-        const value = String(snap.val()).toLowerCase();
-        if (value === "admin" || value === "teacher") role = value;
+      try {
+        const snap = await get(ref(db, `TeacherUID/${user.uid}`));
+        if (snap.exists()) {
+          const value = String(snap.val()).toLowerCase();
+          if (value === "admin" || value === "teacher") role = value;
+        }
+      } catch (e) {
+        console.error("Role load failed:", e);
       }
     }
 
-    function renderMyAccount(user) {
-      const balance = accountData[user.uid]?.balance || 0;
-      document.getElementById("myBalance").textContent = formatSh(balance);
+    function renderDashboardAndLeaderboard(user) {
+      if (!user) return;
 
+      // 1. 내 잔고 표시
+      const myBalance = accountData[user.uid]?.balance || 0;
+      document.getElementById("myBalance").textContent = formatSh(myBalance);
+
+      // 2. 학급 전체 sh 계산
+      const totalSh = Object.values(accountData).reduce((sum, acc) => sum + Number(acc?.balance || 0), 0);
+      document.getElementById("totalClassBalance").textContent = formatSh(totalSh);
+
+      // 3. 내 거래 내역
       const rows = Object.values(transactionData)
         .filter(t => t.uid === user.uid)
         .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -226,19 +294,41 @@
 
       if (!rows.length) {
         box.innerHTML = '<div class="empty small">사용 내역이 없습니다.</div>';
-        return;
+      } else {
+        box.innerHTML = rows.map(t => {
+          const positive = Number(t.amount) >= 0;
+          return `<div class="history-row">
+            <div>
+              <b>${escapeHtml(t.reason || "거래")}</b>
+              <div class="muted">${escapeHtml(t.createdAt?.substring(0, 10) || "")}</div>
+            </div>
+            <strong class="${positive ? "plus" : "minus"}">${positive ? "+" : ""}${formatSh(t.amount)} sh</strong>
+          </div>`;
+        }).join("");
       }
 
-      box.innerHTML = rows.map(t => {
-        const positive = Number(t.amount) >= 0;
-        return `<div class="history-row">
-          <div>
-            <b>${escapeHtml(t.reason || "거래")}</b>
-            <div class="muted">${escapeHtml(t.createdAt || "")} · 처리자 ${escapeHtml(t.actorUid || "-")}</div>
-          </div>
-          <strong class="${positive ? "plus" : "minus"}">${positive ? "+" : ""}${formatSh(t.amount)} sh</strong>
-        </div>`;
-      }).join("");
+      // 4. 리더보드 생성
+      const sortedAccounts = Object.entries(accountData).sort((a,b) =>
+        Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
+      );
+
+      const leaderboardBox = document.getElementById("leaderboardList");
+      if (!sortedAccounts.length) {
+        leaderboardBox.innerHTML = '<div class="empty small">등록된 학생이 없습니다.</div>';
+      } else {
+        leaderboardBox.innerHTML = sortedAccounts.map(([uid, acc], idx) => {
+          const rank = idx + 1;
+          const rankClass = rank <= 3 ? `rank-${rank}` : "";
+          const isMe = uid === user.uid ? 'style="background:#f0f7ff; border-color:#b3d4fc;"' : '';
+          return `<div class="account-row" ${isMe}>
+            <div>
+              <span class="rank-badge ${rankClass}">${rank}</span>
+              <b>${escapeHtml(acc.name || uid)}</b> ${uid === user.uid ? '<small class="muted">(나)</small>' : ''}
+            </div>
+            <strong>${formatSh(acc.balance)} sh</strong>
+          </div>`;
+        }).join("");
+      }
     }
 
     function renderTeacherData() {
@@ -246,6 +336,7 @@
         Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
       );
 
+      // 전체 계좌 리스트
       const box = document.getElementById("allAccounts");
       if (!accounts.length) {
         box.innerHTML = '<div class="empty small">계좌가 없습니다.</div>';
@@ -261,33 +352,55 @@
         `).join("");
       }
 
+      // 교사 지급용 학생 체크박스 목록 업데이트
+      const checkboxBox = document.getElementById("studentCheckboxList");
+      if (!accounts.length) {
+        checkboxBox.innerHTML = '<div class="muted" style="text-align:center; padding:10px;">학생 계좌가 없습니다.</div>';
+      } else {
+        checkboxBox.innerHTML = accounts.map(([uid, a]) => `
+          <label class="student-option">
+            <input type="checkbox" name="studentTarget" value="${escapeHtml(uid)}">
+            <span><b>${escapeHtml(a.name || uid)}</b> <small class="muted">(${formatSh(a.balance)} sh)</small></span>
+          </label>
+        `).join("");
+      }
+
+      // 전체 거래 내역
       const rows = Object.values(transactionData)
         .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
       document.getElementById("allHistory").innerHTML = rows.length
-        ? rows.map(t => `<div class="history-row">
-            <div>
-              <b>${escapeHtml(t.reason || "거래")}</b>
-              <div class="muted">대상 UID: ${escapeHtml(t.uid)} · 처리자: ${escapeHtml(t.actorUid || "-")} · ${escapeHtml(t.createdAt || "")}</div>
-            </div>
-            <strong class="${Number(t.amount) >= 0 ? "plus" : "minus"}">${Number(t.amount) >= 0 ? "+" : ""}${formatSh(t.amount)} sh</strong>
-          </div>`).join("")
+        ? rows.map(t => {
+            const targetName = accountData[t.uid]?.name || t.uid;
+            return `<div class="history-row">
+              <div>
+                <b>${escapeHtml(t.reason || "거래")}</b>
+                <div class="muted">대상: ${escapeHtml(targetName)} · 처리자: ${escapeHtml(t.actorUid || "-")} · ${escapeHtml(t.createdAt?.substring(0, 16) || "")}</div>
+              </div>
+              <strong class="${Number(t.amount) >= 0 ? "plus" : "minus"}">${Number(t.amount) >= 0 ? "+" : ""}${formatSh(t.amount)} sh</strong>
+            </div>`;
+          }).join("")
         : '<div class="empty small">거래 내역이 없습니다.</div>';
     }
 
     function subscribeData(user) {
       onValue(ref(db, "olbk/accounts"), snap => {
         accountData = snap.exists() ? snap.val() : {};
-        renderMyAccount(user);
+        renderDashboardAndLeaderboard(user);
         if (role === "teacher" || role === "admin") renderTeacherData();
       });
 
       onValue(ref(db, "olbk/transactions"), snap => {
         transactionData = snap.exists() ? snap.val() : {};
-        renderMyAccount(user);
+        renderDashboardAndLeaderboard(user);
         if (role === "teacher" || role === "admin") renderTeacherData();
       });
     }
+
+    window.toggleSelectAll = (checked) => {
+      const checkboxes = document.querySelectorAll('input[name="studentTarget"]');
+      checkboxes.forEach(cb => cb.checked = checked);
+    };
 
     window.handleLogin = async () => {
       const name = document.getElementById("loginName").value.trim();
@@ -316,7 +429,6 @@
 
     window.adjustBalance = async () => {
       const user = auth.currentUser;
-      const targetUid = document.getElementById("targetUid").value.trim();
       const amount = Number(document.getElementById("amount").value);
       const reason = document.getElementById("reason").value.trim();
       const error = document.getElementById("adjustError");
@@ -327,8 +439,16 @@
         error.textContent = "교사 또는 관리자만 사용할 수 있습니다.";
         return;
       }
-      if (!targetUid || !Number.isInteger(amount) || amount === 0) {
-        error.textContent = "학생 UID와 0이 아닌 정수 sh 금액을 입력하세요.";
+
+      const selectedCheckboxes = document.querySelectorAll('input[name="studentTarget"]:checked');
+      const selectedUids = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+      if (selectedUids.length === 0) {
+        error.textContent = "지급/차감할 학생을 최소 1명 이상 선택하세요.";
+        return;
+      }
+      if (!Number.isInteger(amount) || amount === 0) {
+        error.textContent = "0이 아닌 정수 sh 금액을 입력하세요.";
         return;
       }
       if (!reason) {
@@ -337,24 +457,30 @@
       }
 
       try {
-        const accountRef = ref(db, `olbk/accounts/${targetUid}/balance`);
-        await runTransaction(accountRef, current => Number(current || 0) + amount);
+        const nowIso = new Date().toISOString();
 
-        await push(ref(db, "olbk/transactions"), {
-          uid: targetUid,
-          amount,
-          reason,
-          actorUid: user.uid,
-          actorRole: role,
-          createdAt: new Date().toISOString()
-        });
+        // 선택된 학생 일괄 반영 트랜잭션
+        for (const targetUid of selectedUids) {
+          const accountRef = ref(db, `olbk/accounts/${targetUid}/balance`);
+          await runTransaction(accountRef, current => Number(current || 0) + amount);
+
+          await push(ref(db, "olbk/transactions"), {
+            uid: targetUid,
+            amount,
+            reason,
+            actorUid: user.uid,
+            actorRole: role,
+            createdAt: nowIso
+          });
+        }
 
         document.getElementById("amount").value = "";
         document.getElementById("reason").value = "";
-        alert(`${formatSh(amount)} sh가 반영되었습니다.`);
+        window.toggleSelectAll(false);
+        alert(`${selectedUids.length}명의 학생에게 ${formatSh(amount)} sh가 반영되었습니다.`);
       } catch (e) {
         console.error(e);
-        error.textContent = "거래 처리에 실패했습니다. Firebase Rules도 확인하세요.";
+        error.textContent = "거래 처리에 실패했습니다. Firebase Rules를 확인하세요.";
       }
     };
 
@@ -391,5 +517,4 @@
     });
   </script>
 </body>
-
 </html>
