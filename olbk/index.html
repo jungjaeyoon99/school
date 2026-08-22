@@ -44,13 +44,15 @@
   input { width:100%; padding:10px; border:1px solid #ccd3d8; border-radius:7px; outline:none; }
   input:focus { border-color:#1f5f8b; }
   
-  .student-select-box { border:1px solid #ccd3d8; border-radius:7px; max-height:160px; overflow-y:auto; padding:6px; margin-bottom:8px; background:#fafafa; }
+  .student-select-box { border:1px solid #ccd3d8; border-radius:7px; max-height:200px; overflow-y:auto; padding:6px; margin-bottom:8px; background:#fafafa; }
   .student-option { display:flex; align-items:center; gap:8px; padding:6px 8px; border-bottom:1px solid #eee; font-size:.85rem; cursor:pointer; }
+  .student-option:hover { background:#f0f4f8; }
   .student-option:last-child { border-bottom:none; }
   .student-option input[type="checkbox"] { width:auto; cursor:pointer; }
   
   .select-tools { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-  .btn-text { background:none; border:none; color:#1f5f8b; font-size:.75rem; font-weight:700; cursor:pointer; }
+  .btn-text { background:none; border:none; color:#1f5f8b; font-size:.75rem; font-weight:700; cursor:pointer; margin-left:6px; }
+  .btn-text:hover { text-decoration:underline; }
   
   .primary { width:100%; margin-top:12px; padding:10px; border:0; border-radius:7px; background:#1f5f8b; color:#fff; font-weight:800; cursor:pointer; }
   .error-msg { color:#e74c3c; font-size:.78rem; margin-top:8px; min-height:18px; }
@@ -213,12 +215,14 @@
       signOut,
       onAuthStateChanged,
       setPersistence,
-      browserLocalPersistence
+      browserLocalPersistence,
+      updateProfile
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import {
       getDatabase,
       ref,
       get,
+      set,
       onValue,
       push,
       runTransaction
@@ -253,10 +257,17 @@
       return Number(value || 0).toLocaleString("ko-KR");
     }
 
-    // UID를 이름으로 변환해주는 헬퍼 함수
+    // UID 기반 학생 이름/이메일 자동 추출
     function getStudentName(uid) {
       if (accountData[uid]?.name) return accountData[uid].name;
-      return uid;
+      if (accountData[uid]?.email) {
+        return accountData[uid].email.split("@")[0];
+      }
+      if (auth.currentUser && auth.currentUser.uid === uid) {
+        if (auth.currentUser.displayName) return auth.currentUser.displayName;
+        if (auth.currentUser.email) return auth.currentUser.email.split("@")[0];
+      }
+      return uid; // 이름 최후 보완
     }
 
     function showPanels(user) {
@@ -281,11 +292,11 @@
     function renderDashboardAndLeaderboard(user) {
       if (!user) return;
 
-      // 1. 내 잔고 표시
+      // 1. 내 잔고
       const myBalance = accountData[user.uid]?.balance || 0;
       document.getElementById("myBalance").textContent = formatSh(myBalance);
 
-      // 2. 학급 전체 sh 계산
+      // 2. 학급 전체 sh
       const totalSh = Object.values(accountData).reduce((sum, acc) => sum + Number(acc?.balance || 0), 0);
       document.getElementById("totalClassBalance").textContent = formatSh(totalSh);
 
@@ -312,14 +323,14 @@
         }).join("");
       }
 
-      // 4. 리더보드 생성
+      // 4. 리더보드 (전체 계정 표시)
       const sortedAccounts = Object.entries(accountData).sort((a,b) =>
         Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
       );
 
       const leaderboardBox = document.getElementById("leaderboardList");
       if (!sortedAccounts.length) {
-        leaderboardBox.innerHTML = '<div class="empty small">등록된 학생이 없습니다.</div>';
+        leaderboardBox.innerHTML = '<div class="empty small">등록된 학생 계정이 없습니다.</div>';
       } else {
         leaderboardBox.innerHTML = sortedAccounts.map(([uid, acc], idx) => {
           const rank = idx + 1;
@@ -338,22 +349,24 @@
     }
 
     function renderTeacherData() {
-      const accounts = Object.entries(accountData).sort((a,b) =>
-        Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0)
-      );
+      const accounts = Object.entries(accountData).sort((a,b) => {
+        const nameA = getStudentName(a[0]);
+        const nameB = getStudentName(b[0]);
+        return nameA.localeCompare(nameB, "ko-KR");
+      });
 
-      // 전체 계좌 리스트 (이름 강조)
+      // 전체 계좌 현황 리스트 (거래 내역 없는 학생도 전체 포함)
       const box = document.getElementById("allAccounts");
       if (!accounts.length) {
-        box.innerHTML = '<div class="empty small">계좌가 없습니다.</div>';
+        box.innerHTML = '<div class="empty small">등록된 계좌가 없습니다.</div>';
       } else {
         box.innerHTML = accounts.map(([uid, a]) => {
-          const displayName = a.name || uid;
+          const displayName = getStudentName(uid);
           return `
             <div class="account-row">
               <div>
                 <b>${escapeHtml(displayName)}</b>
-                <div class="muted">${escapeHtml(uid)}</div>
+                <div class="muted">${escapeHtml(a.email || uid)}</div>
               </div>
               <strong>${formatSh(a.balance)} sh</strong>
             </div>
@@ -361,13 +374,13 @@
         }).join("");
       }
 
-      // 교사 지급용 학생 체크박스 목록 업데이트
+      // 교사 지급용 전체 학생 체크박스 목록
       const checkboxBox = document.getElementById("studentCheckboxList");
       if (!accounts.length) {
         checkboxBox.innerHTML = '<div class="muted" style="text-align:center; padding:10px;">학생 계좌가 없습니다.</div>';
       } else {
         checkboxBox.innerHTML = accounts.map(([uid, a]) => {
-          const displayName = a.name || uid;
+          const displayName = getStudentName(uid);
           return `
             <label class="student-option">
               <input type="checkbox" name="studentTarget" value="${escapeHtml(uid)}">
@@ -377,7 +390,7 @@
         }).join("");
       }
 
-      // 전체 거래 내역 (UID 대신 학생 이름 표기)
+      // 전체 거래 내역 (UID 대신 학생 이름 표시)
       const rows = Object.values(transactionData)
         .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 
@@ -428,20 +441,36 @@
       try {
         const email = `${name}@school.jjy0205.site`;
         const credential = await signInWithEmailAndPassword(auth, email, pw);
-        
-        // 로그인 성공 시 olbk/accounts 에 학생 이름 등록/보완
-        const userRef = ref(db, `olbk/accounts/${credential.user.uid}/name`);
-        const nameSnap = await get(userRef);
-        if (!nameSnap.exists()) {
-          await runTransaction(userRef, () => name);
+        const user = credential.user;
+
+        // Firebase Auth displayName 업데이트
+        if (!user.displayName) {
+          await updateProfile(user, { displayName: name });
+        }
+
+        // Realtime DB에 학생 계정 프로필 사전 등록 (이름, 이메일, 기본 잔고)
+        const accountRef = ref(db, `olbk/accounts/${user.uid}`);
+        const snap = await get(accountRef);
+        if (!snap.exists()) {
+          await set(accountRef, {
+            name: name,
+            email: email,
+            balance: 0
+          });
+        } else {
+          // 이름이나 이메일 누락 시 업데이트
+          if (!snap.val().name) await set(ref(db, `olbk/accounts/${user.uid}/name`), name);
+          if (!snap.val().email) await set(ref(db, `olbk/accounts/${user.uid}/email`), email);
         }
 
         closeLoginModal();
         document.getElementById("loginName").value = "";
         document.getElementById("loginPw").value = "";
-        await loadRole(credential.user);
-        showPanels(credential.user);
-        subscribeData(credential.user);
+        
+        await loadRole(user);
+        updateUserHeader(user);
+        showPanels(user);
+        subscribeData(user);
       } catch (e) {
         console.error(e);
         error.textContent = "로그인 정보가 올바르지 않습니다.";
@@ -517,21 +546,31 @@
       document.getElementById("loginModal").classList.add("hidden");
     };
 
-    onAuthStateChanged(auth, async user => {
+    function updateUserHeader(user) {
       const label = document.getElementById("userLabel");
       document.getElementById("btnLogin").classList.toggle("hidden", !!user);
       document.getElementById("btnLogout").classList.toggle("hidden", !user);
 
       if (!user) {
-        role = null;
-        showPanels(null);
         label.textContent = "비로그인 상태";
         return;
       }
 
+      const displayName = user.displayName || (user.email ? user.email.split("@")[0] : "사용자");
+      const roleText = role ? ` (${role})` : "";
+      label.textContent = `👤 ${displayName}${roleText}님 환영합니다`;
+    }
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) {
+        role = null;
+        updateUserHeader(null);
+        showPanels(null);
+        return;
+      }
+
       await loadRole(user);
-      const roleText = role ? ` · ${role}` : "";
-      label.textContent = `👤 ${user.email?.split("@")[0] || "사용자"}${roleText}`;
+      updateUserHeader(user);
       showPanels(user);
       subscribeData(user);
     });
