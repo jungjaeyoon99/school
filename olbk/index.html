@@ -37,11 +37,36 @@
   label { display:block; font-size:.8rem; font-weight:700; margin:9px 0 5px; }
   input, select { width:100%; padding:10px; border:1px solid #ccd3d8; border-radius:7px; outline:none; }
   input:focus, select:focus { border-color:#1f5f8b; }
-  .student-select-box { border:1px solid #ccd3d8; border-radius:7px; max-height:220px; overflow-y:auto; padding:6px; margin-bottom:8px; background:#fafafa; }
-  .student-option { display:flex; align-items:center; gap:8px; padding:7px 8px; border-bottom:1px solid #eee; font-size:.85rem; cursor:pointer; }
-  .student-option:hover { background:#f0f4f8; }
-  .student-option:last-child { border-bottom:none; }
-  .student-option input[type="checkbox"] { width:auto; cursor:pointer; }
+  
+  /* 학생 선택 영역: 블록(Grid/Flex) 형태 스타일링 */
+  .student-select-box {
+    border: 1px solid #ccd3d8;
+    border-radius: 7px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #fafafa;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .student-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: .85rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .student-option:hover { background: #eef5fb; border-color: #1f5f8b; }
+  .student-option input[type="checkbox"] { width: auto; cursor: pointer; }
+
   .select-tools { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
   .btn-text { background:none; border:none; color:#1f5f8b; font-size:.78rem; font-weight:700; cursor:pointer; margin-left:6px; }
   .btn-text:hover { text-decoration:underline; }
@@ -171,7 +196,7 @@
           </div>
 
           <div id="studentCheckboxList" class="student-select-box">
-            <div class="muted" style="text-align:center;padding:10px;">학생 목록을 불러오는 중...</div>
+            <div class="muted" style="text-align:center;padding:10px;width:100%;">학생 목록을 불러오는 중...</div>
           </div>
 
           <label>사유 선택 (Shortcut)</label>
@@ -324,7 +349,7 @@
   setPersistence(auth, browserLocalPersistence);
 
   let role = null;
-  let teacherUidRole = null; // TeacherUID에 등록된 상세 권한
+  let teacherUidRole = null;
   let accountData = {};
   let transactionData = {};
   let tpData = {};
@@ -384,7 +409,6 @@
   function renderDashboardAndLeaderboard(user) {
     if (!user) return;
 
-    // 1. 내 잔고 (teacher/admin인 경우 무한대 표시)
     if (teacherUidRole === "teacher" || teacherUidRole === "admin") {
       document.getElementById("myBalance").textContent = "∞";
       document.getElementById("myBalanceUnit").textContent = "";
@@ -394,11 +418,9 @@
       document.getElementById("myBalanceUnit").textContent = "sh";
     }
 
-    // 2. 학급 전체 sh
     const totalSh = Object.values(accountData).reduce((sum, acc) => sum + Number(acc?.balance || 0), 0);
     document.getElementById("totalClassBalance").textContent = formatSh(totalSh);
 
-    // 3. 내 거래 내역
     const rows = Object.values(transactionData)
       .filter(t => t.uid === user.uid)
       .sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -425,7 +447,6 @@
       }).join("");
     }
 
-    // 4. 리더보드
     const sortedAccounts = Object.entries(accountData)
       .sort((a,b) => Number(b[1]?.balance || 0) - Number(a[1]?.balance || 0));
 
@@ -454,6 +475,7 @@
   }
 
   function renderTeacherData() {
+    // 사전식 정렬
     const accounts = Object.entries(accountData).sort((a,b) => {
       const nameA = getStudentName(a[0]);
       const nameB = getStudentName(b[0]);
@@ -479,26 +501,22 @@
       }).join("");
     }
 
-    // 지급 대상 학생 체크박스
+    // 블록 배치 및 사전순 정렬 적용된 지급 대상 학생 체크박스 목록
     const checkboxBox = document.getElementById("studentCheckboxList");
     if (!accounts.length) {
-      checkboxBox.innerHTML = '<div class="muted" style="text-align:center;padding:10px;">등록된 학생이 없습니다.</div>';
+      checkboxBox.innerHTML = '<div class="muted" style="text-align:center;padding:10px;width:100%;">등록된 학생이 없습니다.</div>';
     } else {
       checkboxBox.innerHTML = accounts.map(([uid, a]) => {
         const displayName = getStudentName(uid);
         return `
           <label class="student-option">
             <input type="checkbox" name="studentTarget" value="${escapeHtml(uid)}">
-            <span>
-              <b>${escapeHtml(displayName)}</b>
-              <small class="muted">(${formatSh(a.balance)} sh)</small>
-            </span>
+            <span><b>${escapeHtml(displayName)}</b> <small class="muted">(${formatSh(a.balance)}sh)</small></span>
           </label>
         `;
       }).join("");
     }
 
-    // 전체 거래 내역
     const rows = Object.values(transactionData).sort((a,b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     document.getElementById("allHistory").innerHTML = rows.length ? rows.map(t => {
       const studentName = getStudentName(t.uid);
@@ -523,9 +541,13 @@
     const tpSelect = document.getElementById("tpSelect");
     const tpList = document.getElementById("tpList");
     
-    const items = Object.entries(tpData);
+    // 사유(Shortcut) 사전식 정렬 (name 기준)
+    const items = Object.entries(tpData).sort((a, b) => {
+      const nameA = a[1]?.name || "";
+      const nameB = b[1]?.name || "";
+      return nameA.localeCompare(nameB, "ko-KR");
+    });
     
-    // Shortcut 셀렉트 박스 갱신
     let selectHtml = '<option value="">-- 변동 사유 선택 (Shortcut) --</option>';
     items.forEach(([id, item]) => {
       selectHtml += `<option value="${id}">${escapeHtml(item.name)} (${item.price > 0 ? '+' : ''}${formatSh(item.price)} sh)</option>`;
@@ -533,7 +555,6 @@
     selectHtml += '<option value="custom">기타 (직접 입력)</option>';
     tpSelect.innerHTML = selectHtml;
 
-    // olbkTP 관리용 목록 갱신
     if (!items.length) {
       tpList.innerHTML = '<div class="empty small">등록된 Shortcut이 없습니다.</div>';
     } else {
@@ -689,7 +710,6 @@
 
     await loadRole(user);
 
-    // 특수 권한(teacher, admin, subteacher, subadmin)이 아니면 최초 로그인시 account 생성
     const noAccountRoles = ["teacher", "admin", "subteacher", "subadmin"];
     if (!noAccountRoles.includes(teacherUidRole)) {
       try {
