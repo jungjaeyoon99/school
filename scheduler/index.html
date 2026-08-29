@@ -895,7 +895,8 @@
         await push(ref(db, 'SchedulerTS'), {
           examTitle: title,
           createdAt: new Date().toISOString(),
-          authorUid: auth.currentUser.uid
+          authorUid: auth.currentUser.uid,
+          deleted: false
         });
         document.getElementById('inputExamTitle').value = '';
       } catch (err) {
@@ -912,10 +913,13 @@
         return;
       }
 
+      const canDeleteExamTitle = currentUserRole === 'admin';
       const canDelete = ['admin', 'subadmin', 'teacher', 'subteacher'].includes(currentUserRole);
 
       Object.keys(data).forEach(examId => {
         const exam = data[examId];
+        if (exam.deleted) return;
+
         const card = document.createElement('div');
         card.className = 'ts-card';
 
@@ -923,6 +927,8 @@
         if (exam.items) {
           Object.keys(exam.items).forEach(itemId => {
             const item = exam.items[itemId];
+            if (item.deleted) return;
+
             const deleteBtnHtml = canDelete
               ? `<button class="btn-delete" onclick="deleteTSItem('${escapeJsArg(examId)}', '${escapeJsArg(itemId)}')">🗑️ 삭제</button>`
               : '';
@@ -952,10 +958,17 @@
           ? `<button class="btn-toggle" style="margin-top:10px;" onclick="openAddTSItemModal('${escapeJsArg(examId)}')">➕ 과목 범위 추가</button>`
           : '';
 
+        const deleteExamTitleBtnHtml = canDeleteExamTitle
+          ? `<button class="btn-delete" onclick="event.stopPropagation(); deleteExamTitle('${escapeJsArg(examId)}')">🗑️ 시험 삭제</button>`
+          : '';
+
         card.innerHTML = `
           <div class="accordion-header" onclick="toggleExamContent('${escapeJsArg(examId)}')">
             <span>📝 ${escapeHtml(exam.examTitle)}</span>
-            <span>▼</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              ${deleteExamTitleBtnHtml}
+              <span>▼</span>
+            </div>
           </div>
           <div id="exam-content-${escapeHtml(examId)}" class="accordion-content hidden">
             ${itemsHtml}
@@ -1005,7 +1018,8 @@
           rangeText,
           link,
           createdAt: new Date().toISOString(),
-          authorUid: auth.currentUser.uid
+          authorUid: auth.currentUser.uid,
+          deleted: false
         });
         closeAddTSItemModal();
       } catch (err) {
@@ -1014,11 +1028,38 @@
     };
 
     window.deleteTSItem = async (examId, itemId) => {
+      const user = auth.currentUser;
+      if (!user) return;
       if (!confirm("이 시험 범위를 삭제하시겠습니까?")) return;
+
       try {
-        await set(ref(db, `SchedulerTS/${examId}/items/${itemId}`), null);
+        await update(ref(db, `SchedulerTS/${examId}/items/${itemId}`), {
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: user.uid
+        });
       } catch (err) {
         alert("삭제 실패: " + err.message);
+      }
+    };
+
+    window.deleteExamTitle = async (examId) => {
+      const user = auth.currentUser;
+      if (!user || currentUserRole !== 'admin') {
+        alert("시험 이름 삭제는 admin만 할 수 있습니다.");
+        return;
+      }
+
+      if (!confirm("이 시험 이름과 시험 범위 안내를 삭제하시겠습니까?")) return;
+
+      try {
+        await update(ref(db, `SchedulerTS/${examId}`), {
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: user.uid
+        });
+      } catch (err) {
+        alert("시험 삭제 실패: " + err.message);
       }
     };
 
@@ -1045,7 +1086,8 @@
           content,
           authorUid: user.uid,
           authorEmail: user.email,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          deleted: false
         });
 
         document.getElementById('inputNoticeTitle').value = '';
@@ -1069,6 +1111,8 @@
 
       Object.keys(data).forEach(noticeId => {
         const item = data[noticeId];
+        if (item.deleted) return;
+
         const card = document.createElement('div');
         card.className = 'ancm-card';
 
@@ -1096,9 +1140,16 @@
     }
 
     window.deleteNotice = async (noticeId) => {
+      const user = auth.currentUser;
+      if (!user) return;
       if (!confirm("이 공지사항을 삭제하시겠습니까?")) return;
+
       try {
-        await set(ref(db, `SchedulerANCM/${noticeId}`), null);
+        await update(ref(db, `SchedulerANCM/${noticeId}`), {
+          deleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: user.uid
+        });
       } catch (err) {
         alert("삭제 실패: " + err.message);
       }
