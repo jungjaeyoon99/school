@@ -171,6 +171,7 @@
       <div id="noticeAdminBar" class="input-bar hidden" style="margin-bottom: 12px;">
         <input type="text" id="inputNoticeTitle" placeholder="공지사항 제목">
         <textarea id="inputNoticeContent" placeholder="공지사항 내용" rows="3" style="padding:10px; border:1px solid #ccc; border-radius:6px; resize:vertical;"></textarea>
+        <input type="text" id="inputNoticeLink" placeholder="첨부 링크 (선택)">
         <button class="btn-send" onclick="uploadNotice()" style="padding: 10px; border-radius: 6px;">공지 등록</button>
       </div>
       <div id="noticeFeed" style="width: 100%;">
@@ -213,6 +214,18 @@
       <textarea id="editDesc" placeholder="상세 설명" rows="3"></textarea>
       <button onclick="saveEditSchedule()">저장하기</button>
       <button onclick="closeEditScheduleModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
+
+  <!-- 공지사항 편집 모달 -->
+  <div id="editNoticeModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>공지사항 편집</h2>
+      <input type="text" id="editNoticeTitle" placeholder="공지사항 제목">
+      <textarea id="editNoticeContent" placeholder="공지사항 내용" rows="5"></textarea>
+      <input type="text" id="editNoticeLink" placeholder="첨부 링크 (선택)">
+      <button onclick="saveEditNotice()">저장하기</button>
+      <button onclick="closeEditNoticeModal()" style="background-color: #888;">취소</button>
     </div>
   </div>
 
@@ -344,6 +357,7 @@
     let cachedExamData = null;
     let cachedNoticeData = null;
     let editingScheduleId = null;
+    let editingNoticeId = null;
     let activeExamIdForAdd = null;
 
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
@@ -547,8 +561,8 @@
         btnSend.disabled = false;
         inputContent.placeholder = "수행평가 내용 입력 (예: 수학 3단원 형성평가)";
 
-        // 시험 생성 권한 체크 (admin, subadmin, teacher)
-        if (['admin', 'subadmin', 'teacher'].includes(currentUserRole)) {
+        // 시험 생성 권한 체크: admin만
+        if (currentUserRole === 'admin') {
           examAdminBar.classList.remove('hidden');
         } else {
           examAdminBar.classList.add('hidden');
@@ -886,6 +900,11 @@
     });
 
     window.addExamTitle = async () => {
+      if (!auth.currentUser || currentUserRole !== 'admin') {
+        alert("시험 생성은 admin만 할 수 있습니다.");
+        return;
+      }
+
       const title = document.getElementById('inputExamTitle').value.trim();
       if (!title) {
         alert("시험 이름을 입력하세요.");
@@ -1073,6 +1092,7 @@
     window.uploadNotice = async () => {
       const title = document.getElementById('inputNoticeTitle').value.trim();
       const content = document.getElementById('inputNoticeContent').value.trim();
+      const link = document.getElementById('inputNoticeLink').value.trim();
       const user = auth.currentUser;
 
       if (!title || !content) {
@@ -1086,12 +1106,14 @@
           content,
           authorUid: user.uid,
           authorEmail: user.email,
+          link: link || "",
           createdAt: new Date().toISOString(),
           deleted: false
         });
 
         document.getElementById('inputNoticeTitle').value = '';
         document.getElementById('inputNoticeContent').value = '';
+        document.getElementById('inputNoticeLink').value = '';
       } catch (err) {
         alert("등록 실패: " + err.message);
       }
@@ -1116,11 +1138,22 @@
         const card = document.createElement('div');
         card.className = 'ancm-card';
 
+        // 편집 권한: 작성자 본인 또는 admin
+        const canEdit = currentUserRole === 'admin' || (currentUid && currentUid === item.authorUid);
+
         // 삭제 권한: admin은 전체 삭제 가능, 타 권한은 본인 작성글만 가능
         const canDelete = currentUserRole === 'admin' || (currentUid && currentUid === item.authorUid);
 
+        const editBtnHtml = canEdit
+          ? `<button class="btn-edit" onclick="openEditNoticeModal('${escapeJsArg(noticeId)}')">✏️ 편집</button>`
+          : '';
+
         const deleteBtnHtml = canDelete
           ? `<button class="btn-delete" onclick="deleteNotice('${escapeJsArg(noticeId)}')">🗑️ 삭제</button>`
+          : '';
+
+        const linkHtml = item.link
+          ? `<div style="font-size:0.88rem; margin:8px 0;"><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">🔗 첨부 링크</a></div>`
           : '';
 
         card.innerHTML = `
@@ -1130,14 +1163,80 @@
           </div>
           <div class="card-title" style="font-weight:bold; font-size:1.05rem;">${escapeHtml(item.title)}</div>
           <div style="font-size:0.9rem; color:#444; line-height:1.5; white-space:pre-wrap; margin:10px 0;">${escapeHtml(item.content)}</div>
+          ${linkHtml}
           <div class="card-footer">
             <span>작성자: <b>${escapeHtml(item.authorEmail ? item.authorEmail.split('@')[0] : '관리자')}</b></span>
-            <div>${deleteBtnHtml}</div>
+            <div class="action-buttons">${editBtnHtml}${deleteBtnHtml}</div>
           </div>
         `;
         feed.appendChild(card);
       });
     }
+
+    window.openEditNoticeModal = (noticeId) => {
+      const item = cachedNoticeData && cachedNoticeData[noticeId];
+      const user = auth.currentUser;
+
+      if (!item || !user) return;
+
+      const canEdit = currentUserRole === 'admin' || user.uid === item.authorUid;
+      if (!canEdit) {
+        alert("공지사항은 작성자 본인 또는 admin만 편집할 수 있습니다.");
+        return;
+      }
+
+      editingNoticeId = noticeId;
+      document.getElementById('editNoticeTitle').value = item.title || '';
+      document.getElementById('editNoticeContent').value = item.content || '';
+      document.getElementById('editNoticeLink').value = item.link || '';
+      document.getElementById('editNoticeModal').classList.remove('hidden');
+    };
+
+    window.closeEditNoticeModal = () => {
+      editingNoticeId = null;
+      document.getElementById('editNoticeModal').classList.add('hidden');
+      document.getElementById('editNoticeTitle').value = '';
+      document.getElementById('editNoticeContent').value = '';
+      document.getElementById('editNoticeLink').value = '';
+    };
+
+    window.saveEditNotice = async () => {
+      const user = auth.currentUser;
+
+      if (!editingNoticeId || !user) return;
+
+      const item = cachedNoticeData && cachedNoticeData[editingNoticeId];
+      if (!item) return;
+
+      const canEdit = currentUserRole === 'admin' || user.uid === item.authorUid;
+      if (!canEdit) {
+        alert("공지사항은 작성자 본인 또는 admin만 편집할 수 있습니다.");
+        return;
+      }
+
+      const title = document.getElementById('editNoticeTitle').value.trim();
+      const content = document.getElementById('editNoticeContent').value.trim();
+      const link = document.getElementById('editNoticeLink').value.trim();
+
+      if (!title || !content) {
+        alert("제목과 내용을 모두 입력하세요.");
+        return;
+      }
+
+      try {
+        await update(ref(db, `SchedulerANCM/${editingNoticeId}`), {
+          title,
+          content,
+          link: link || "",
+          updatedAt: new Date().toISOString(),
+          updatedBy: user.uid
+        });
+
+        closeEditNoticeModal();
+      } catch (err) {
+        alert("수정 실패: " + err.message);
+      }
+    };
 
     window.deleteNotice = async (noticeId) => {
       const user = auth.currentUser;
