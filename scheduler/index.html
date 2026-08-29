@@ -15,8 +15,17 @@
     .btn-logout { background-color: #e74c3c; color: white; }
     .btn-noti { background-color: #f39c12; color: white; }
 
+    /* 탭 메뉴 스타일 */
+    .nav-tabs { display: flex; background-color: #3b7bc4; padding: 0 20px; gap: 4px; }
+    .tab-btn { padding: 12px 18px; border: none; background: none; color: rgba(255,255,255,0.8); font-weight: bold; cursor: pointer; font-size: 0.95rem; border-top-left-radius: 8px; border-top-right-radius: 8px; transition: all 0.2s; }
+    .tab-btn:hover { background-color: rgba(255,255,255,0.1); color: white; }
+    .tab-btn.active { background-color: #f0f2f5; color: #2c3e50; }
+
     main { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-    .schedule-card { background-color: white; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%; max-width: 500px; position: relative; transition: all 0.2s ease; }
+    .tab-content { width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+
+    /* 카드 공통 스타일 */
+    .schedule-card, .ts-card, .ancm-card { background-color: white; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); width: 100%; position: relative; transition: all 0.2s ease; }
     .schedule-card.status-today { border-left: 6px solid #e74c3c; background-color: #fff8f8; }
     .schedule-card.status-d3 { border-left: 6px solid #f39c12; background-color: #fffcf5; }
     .schedule-card.status-week { border-left: 6px solid #3498db; }
@@ -36,13 +45,20 @@
     .card-title { font-size: 1rem; color: #2c3e50; margin: 8px 0; word-break: break-word; line-height: 1.4; white-space: pre-wrap; }
     .card-footer { font-size: 0.75rem; color: #999; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid #f0f0f0; padding-top: 6px; margin-top: 6px; }
     .action-buttons { display: flex; gap: 4px; }
-    .btn-edit, .btn-delete { background: none; border: none; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .btn-edit, .btn-delete, .btn-toggle { background: none; border: none; font-size: 0.75rem; cursor: pointer; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .btn-toggle { color: #4A90E2; background-color: #f0f7ff; }
+    .btn-toggle:hover { background-color: #d8eaff; }
     .btn-edit { color: #3498db; }
     .btn-edit:hover { background-color: #eaf4fc; }
     .btn-delete { color: #e74c3c; }
     .btn-delete:hover { background-color: #fbeae8; }
 
-    .input-bar { background-color: white; border-top: 1px solid #ddd; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+    /* 펼침 상세 영역 */
+    .card-details { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e0e0e0; font-size: 0.88rem; color: #444; display: flex; flex-direction: column; gap: 6px; }
+    .card-details a { color: #3498db; word-break: break-all; }
+
+    /* 하단 입력바 */
+    .input-bar { background-color: white; border-top: 1px solid #ddd; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; max-width: 600px; margin: 0 auto; width: 100%; }
     .controls-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .controls-row input, .controls-row select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; }
     .message-row { display: flex; gap: 8px; }
@@ -51,10 +67,11 @@
     .btn-send:disabled { background-color: #ccc; cursor: not-allowed; }
     footer { text-align: center; padding: 14px; background-color: #ffffff; color: #7f8c8d; font-size: 0.8rem; border-top: 1px solid #e2e8f0; margin-top: auto; }
 
+    /* 모달 */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
-    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-content { background: white; padding: 24px; border-radius: 12px; width: 340px; display: flex; flex-direction: column; gap: 12px; max-height: 90vh; overflow-y: auto; }
     .modal-content h2 { font-size: 1.2rem; text-align: center; margin-bottom: 8px; }
-    .modal-content input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+    .modal-content input, .modal-content select, .modal-content textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.88rem; width: 100%; }
     .modal-content button { padding: 10px; background-color: #4A90E2; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .hidden { display: none !important; }
     .error-msg { color: #e74c3c; font-size: 0.8rem; text-align: center; }
@@ -64,6 +81,14 @@
     .privacy-link { color: #4A90E2; background: none; border: none; padding: 0; font-size: 0.85rem; cursor: pointer; text-decoration: underline; font-weight: bold; }
     .privacy-terms-modal .modal-content { max-width: 460px; width: calc(100% - 32px); }
     .privacy-terms-box { color: #333; font-size: 0.88rem; line-height: 1.65; background: #f7f9fc; padding: 14px; border-radius: 8px; max-height: 55vh; overflow-y: auto; }
+
+    /* 아코디언 관련 스타일 */
+    .accordion-header { background: #eef6ff; padding: 12px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border: 1px solid #d0e3ff; }
+    .accordion-header:hover { background: #e0efff; }
+    .accordion-content { padding: 10px 0 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .subject-item { background: #f9f9f9; border: 1px solid #eee; border-radius: 6px; padding: 10px 14px; }
+    .subject-header { cursor: pointer; font-weight: bold; color: #2c3e50; display: flex; justify-content: space-between; }
+    .subject-body { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e9e9e9; font-size: 0.88rem; color: #555; }
   </style>
 </head>
 <body>
@@ -78,20 +103,97 @@
     </div>
   </header>
 
-  <main id="scheduleFeed">
-    <div style="text-align: center; color: #888; margin-top: 20px;">스케줄을 불러오는 중입니다...</div>
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('scheduler')">🗓️ 스케줄러</button>
+    <button class="tab-btn" onclick="switchTab('exam')">📖 시험 범위 안내</button>
+    <button class="tab-btn" onclick="switchTab('notice')">📢 공지사항</button>
+  </nav>
+
+  <main>
+    <!-- TAB 1: 스케줄러 -->
+    <div id="tabScheduler" class="tab-content">
+      <div id="scheduleFeed" style="width: 100%;">
+        <div style="text-align: center; color: #888; margin-top: 20px;">스케줄을 불러오는 중입니다...</div>
+      </div>
+
+      <div class="input-bar">
+        <div class="controls-row">
+          <input type="date" id="inputDate">
+          <select id="inputSubject">
+            <option value="국어">국어</option>
+            <option value="수학">수학</option>
+            <option value="영어">영어</option>
+            <option value="과학">과학</option>
+            <option value="사회">사회</option>
+            <option value="도덕">도덕</option>
+            <option value="체육">체육</option>
+            <option value="정보">정보</option>
+            <option value="진로">진로</option>
+            <option value="진로탐구">진로탐구</option>
+            <option value="음악">음악</option>
+            <option value="안내사항">안내사항</option>
+            <option value="기타">기타</option>
+          </select>
+          <select id="inputPriority">
+            <option value="crazy">중요도: 어마무시함</option>
+            <option value="high">중요도: 높음 (상)</option>
+            <option value="medium" selected>중요도: 보통 (중)</option>
+            <option value="low">중요도: 낮음 (하)</option>
+            <option value="neverstudy">중요도: 평가 불가</option>
+          </select>
+        </div>
+        <div class="message-row">
+          <input type="text" id="inputContent" placeholder="로그인 후 수행평가 스케줄을 입력할 수 있습니다..." disabled>
+          <button id="btnSend" class="btn-send" onclick="uploadSchedule()" disabled>등록</button>
+        </div>
+        <div class="controls-row">
+          <input type="text" id="inputLink" placeholder="첨부 링크 (선택)" style="flex:1;" disabled>
+          <input type="text" id="inputDesc" placeholder="상세 설명 (선택)" style="flex:2;" disabled>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 시험 범위 안내 (SchedulerTS) -->
+    <div id="tabExam" class="tab-content hidden">
+      <div id="examAdminBar" class="input-bar hidden" style="margin-bottom: 12px;">
+        <div class="message-row">
+          <input type="text" id="inputExamTitle" placeholder="새 시험 이름 입력 (예: 2학기 중간고사)">
+          <button class="btn-send" onclick="addExamTitle()">시험 생성</button>
+        </div>
+      </div>
+      <div id="examFeed" style="width: 100%;">
+        <div style="text-align: center; color: #888; margin-top: 20px;">시험 범위를 불러오는 중입니다...</div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 공지사항 (SchedulerANCM) -->
+    <div id="tabNotice" class="tab-content hidden">
+      <div id="noticeAdminBar" class="input-bar hidden" style="margin-bottom: 12px;">
+        <input type="text" id="inputNoticeTitle" placeholder="공지사항 제목">
+        <textarea id="inputNoticeContent" placeholder="공지사항 내용" rows="3" style="padding:10px; border:1px solid #ccc; border-radius:6px; resize:vertical;"></textarea>
+        <button class="btn-send" onclick="uploadNotice()" style="padding: 10px; border-radius: 6px;">공지 등록</button>
+      </div>
+      <div id="noticeFeed" style="width: 100%;">
+        <div style="text-align: center; color: #888; margin-top: 20px;">공지사항을 불러오는 중입니다...</div>
+      </div>
+    </div>
   </main>
 
-  <div class="input-bar">
-    <div class="controls-row">
-      <input type="date" id="inputDate">
-      <select id="inputSubject">
+  <footer>&copy; 2026 Jaeyun Jeong. All rights reserved.</footer>
+
+  <!-- 스케줄 편집 모달 -->
+  <div id="editScheduleModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>스케줄 편집</h2>
+      <input type="date" id="editDate">
+      <select id="editSubject">
         <option value="국어">국어</option>
         <option value="수학">수학</option>
         <option value="영어">영어</option>
         <option value="과학">과학</option>
         <option value="사회">사회</option>
         <option value="도덕">도덕</option>
+        <option value="체육">체육</option>
         <option value="정보">정보</option>
         <option value="진로">진로</option>
         <option value="진로탐구">진로탐구</option>
@@ -99,21 +201,44 @@
         <option value="안내사항">안내사항</option>
         <option value="기타">기타</option>
       </select>
-      <select id="inputPriority">
+      <select id="editPriority">
         <option value="crazy">중요도: 어마무시함</option>
         <option value="high">중요도: 높음 (상)</option>
-        <option value="medium" selected>중요도: 보통 (중)</option>
+        <option value="medium">중요도: 보통 (중)</option>
         <option value="low">중요도: 낮음 (하)</option>
         <option value="neverstudy">중요도: 평가 불가</option>
       </select>
-    </div>
-    <div class="message-row">
-      <input type="text" id="inputContent" placeholder="로그인 후 수행평가 스케줄을 입력할 수 있습니다..." disabled>
-      <button id="btnSend" class="btn-send" onclick="uploadSchedule()" disabled>등록</button>
+      <input type="text" id="editContent" placeholder="스케줄 제목/내용">
+      <input type="text" id="editLink" placeholder="첨부 링크">
+      <textarea id="editDesc" placeholder="상세 설명" rows="3"></textarea>
+      <button onclick="saveEditSchedule()">저장하기</button>
+      <button onclick="closeEditScheduleModal()" style="background-color: #888;">취소</button>
     </div>
   </div>
 
-  <footer>&copy; 2026 Jaeyun Jeong. All rights reserved.</footer>
+  <!-- 시험 범위 항목 추가 모달 -->
+  <div id="addTSItemModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>시험 범위/과목 추가</h2>
+      <select id="tsSubjectSelect">
+        <option value="국어">국어</option>
+        <option value="수학">수학</option>
+        <option value="영어">영어</option>
+        <option value="과학">과학</option>
+        <option value="사회">사회</option>
+        <option value="도덕">도덕</option>
+        <option value="체육">체육</option>
+        <option value="정보">정보</option>
+        <option value="진로">진로</option>
+        <option value="음악">음악</option>
+        <option value="기타">기타</option>
+      </select>
+      <textarea id="tsRangeText" placeholder="시험 범위 내용 입력" rows="3"></textarea>
+      <input type="text" id="tsLinkInput" placeholder="관련 링크 (선택)">
+      <button onclick="saveTSItem()">추가하기</button>
+      <button onclick="closeAddTSItemModal()" style="background-color: #888;">취소</button>
+    </div>
+  </div>
 
   <div id="notificationHelpModal" class="modal hidden">
     <div class="modal-content" style="max-width: 420px; width: calc(100% - 32px);">
@@ -192,7 +317,8 @@
       push,
       set,
       update,
-      onValue
+      onValue,
+      get
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     if (window.location.protocol !== 'file:' && window.location.pathname !== '/scheduler') {
@@ -213,17 +339,30 @@
     const db = getDatabase(app);
     setPersistence(auth, browserLocalPersistence);
 
-    // 현재 DB export의 roles 구조에 맞춘 UI용 관리자 UID.
-    // 실제 권한은 Firebase Rules가 최종적으로 결정합니다.
-    const ADMIN_UIDS = new Set([
-      "5XwWbVfePJRxaEIp7kExaFb2PUm1"
-    ]);
-
-    let currentUserProfile = null;
+    let currentUserRole = "user"; // 기본 권한
     let cachedSchedules = null;
-    let isAdmin = false;
+    let cachedExamData = null;
+    let cachedNoticeData = null;
+    let editingScheduleId = null;
+    let activeExamIdForAdd = null;
 
     document.getElementById('inputDate').value = new Date().toISOString().substring(0, 10);
+
+    // 탭 전환 함수
+    window.switchTab = (tabName) => {
+      const tabs = ['scheduler', 'exam', 'notice'];
+      tabs.forEach((t, index) => {
+        const btn = document.querySelectorAll('.tab-btn')[index];
+        const content = document.getElementById(t === 'scheduler' ? 'tabScheduler' : t === 'exam' ? 'tabExam' : 'tabNotice');
+        if (t === tabName) {
+          btn.classList.add('active');
+          content.classList.remove('hidden');
+        } else {
+          btn.classList.remove('active');
+          content.classList.add('hidden');
+        }
+      });
+    };
 
     function escapeHtml(text) {
       return String(text ?? '')
@@ -232,6 +371,10 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    function escapeJsArg(value) {
+      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     }
 
     function getPriorityText(priority) {
@@ -272,7 +415,6 @@
 
     async function collectClientMetadata() {
       let publicIp = "N/A";
-
       try {
         const ipRes = await fetch('https://ipapi.co/json/');
         if (ipRes.ok) {
@@ -290,26 +432,16 @@
           publicIp = "Lookup Failed";
         }
       }
-
-      return {
-        ip: publicIp,
-        access_time: new Date().toISOString(),
-        userAgent: navigator.userAgent
-      };
+      return { ip: publicIp, access_time: new Date().toISOString(), userAgent: navigator.userAgent };
     }
 
     async function saveAlarmSetLog(permission, statusMessage = "") {
       const user = auth.currentUser;
-      if (!user) {
-        console.warn("알림 설정 로그 저장 생략: 로그인 상태가 아닙니다.");
-        return;
-      }
-
+      if (!user) return;
       try {
         const clientMeta = await collectClientMetadata();
         const logRef = ref(db, 'log/AlarmSet');
         const newLogRef = push(logRef);
-
         await set(newLogRef, {
           uid: user.uid,
           email: user.email,
@@ -333,33 +465,23 @@
 
     window.enableNotifications = async () => {
       if (!("Notification" in window)) {
-        await saveAlarmSetLog(
-          "unsupported",
-          "이 브라우저는 알림 기능을 지원하지 않습니다."
-        );
+        await saveAlarmSetLog("unsupported", "이 브라우저는 알림 기능을 지원하지 않습니다.");
         showNotificationHelpModal(false);
         return;
       }
-
       try {
         const permission = await Notification.requestPermission();
-
         if (permission === "granted") {
           await saveAlarmSetLog("granted", "브라우저 알림이 허용되었습니다.");
           alert("브라우저 알림이 활성화되었습니다. 30분 주기로 수행평가를 확인합니다.");
           return;
         }
-
         if (permission === "denied") {
           await saveAlarmSetLog("denied", "브라우저 알림 권한이 거부되었습니다.");
           showNotificationHelpModal(true);
           return;
         }
-
-        await saveAlarmSetLog(
-          permission,
-          "알림 권한 선택이 완료되지 않았습니다."
-        );
+        await saveAlarmSetLog(permission, "알림 권한 선택이 완료되지 않았습니다.");
       } catch (error) {
         console.error("알림 권한 요청 실패:", error);
         await saveAlarmSetLog("error", error.message || "알림 권한 요청 중 오류가 발생했습니다.");
@@ -372,18 +494,10 @@
       const title = document.getElementById('notificationHelpTitle');
       const message = document.getElementById('notificationHelpMessage');
 
-      title.innerText = denied
-        ? "🔔 알림 권한이 거부되었습니다"
-        : "🔔 이 브라우저는 알림 기능을 지원하지 않습니다";
-
+      title.innerText = denied ? "🔔 알림 권한이 거부되었습니다" : "🔔 이 브라우저는 알림 기능을 지원하지 않습니다";
       message.innerHTML = denied
-        ? `브라우저 알림 권한이 거부되어 알림을 사용할 수 없습니다.<br><br>
-           <b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>
-           그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`
-        : `이 브라우저는 알림 기능을 지원하지 않습니다.<br><br>
-           <b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>
-           그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`;
-
+        ? `브라우저 알림 권한이 거부되어 알림을 사용할 수 없습니다.<br><br><b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`
+        : `이 브라우저는 알림 기능을 지원하지 않습니다.<br><br><b>P.S. 아이폰이고 카카오톡에서 열고 있다면</b>, 아래 버튼을 통해 Safari에서 다시 열어주세요.<br><br>그 후 Safari에서 <b>홈 화면에 추가</b>를 누르고, 홈 화면에 추가된 아이콘을 눌러 접속하면 알림 기능을 활성화할 수 있습니다.`;
       modal.classList.remove('hidden');
     }
 
@@ -391,63 +505,82 @@
       document.getElementById('notificationHelpModal').classList.add('hidden');
     };
 
-    setInterval(() => {
-      if ("Notification" in window && Notification.permission === "granted" && cachedSchedules) {
-        const activeList = Object.values(cachedSchedules).filter(item => !item.deleted);
-        let urgentCount = 0;
-
-        activeList.forEach(item => {
-          const status = getDateStatus(item.date);
-          if ((status.tag.includes('오늘') || status.tag.includes('내일') || status.tag.includes('D-')) && !status.expired) {
-            urgentCount++;
-          }
-        });
-
-        if (urgentCount > 0) {
-          new Notification("📅 중계중 스케줄러 알림", {
-            body: `현재 마감 임박 스케줄이 ${urgentCount}개 있습니다. 확인해보세요!`,
-            icon: "/favicon.ico"
-          });
+    // 사용자 권한 확인 함수
+    async function fetchUserRole(uid) {
+      try {
+        const snapshot = await get(ref(db, `TeacherUID/${uid}`));
+        if (snapshot.exists()) {
+          return snapshot.val(); // admin, subadmin, teacher, subteacher 등
         }
+      } catch (e) {
+        console.error("Role 확인 오류:", e);
       }
-    }, 30 * 60 * 1000);
+      return "user";
+    }
 
     onAuthStateChanged(auth, async (user) => {
       const userLabel = document.getElementById('userLabel');
       const btnLogin = document.getElementById('btnLogin');
       const btnChangePw = document.getElementById('btnChangePw');
       const btnLogout = document.getElementById('btnLogout');
+
       const inputContent = document.getElementById('inputContent');
+      const inputLink = document.getElementById('inputLink');
+      const inputDesc = document.getElementById('inputDesc');
       const btnSend = document.getElementById('btnSend');
 
-      if (user) {
-        const fallbackName = user.email ? user.email.split('@')[0] : '사용자';
-        isAdmin = ADMIN_UIDS.has(user.uid);
-        currentUserProfile = {
-          name: fallbackName,
-          role: isAdmin ? 'admin' : 'user'
-        };
+      const examAdminBar = document.getElementById('examAdminBar');
+      const noticeAdminBar = document.getElementById('noticeAdminBar');
 
-        userLabel.innerText = `👤 ${fallbackName}님${isAdmin ? ' (관리자)' : ''}`;
+      if (user) {
+        currentUserRole = await fetchUserRole(user.uid);
+        const fallbackName = user.email ? user.email.split('@')[0] : '사용자';
+
+        userLabel.innerText = `👤 ${fallbackName}님 (${currentUserRole})`;
         btnLogin.classList.add('hidden');
         btnChangePw.classList.remove('hidden');
         btnLogout.classList.remove('hidden');
+
         inputContent.disabled = false;
+        inputLink.disabled = false;
+        inputDesc.disabled = false;
         btnSend.disabled = false;
         inputContent.placeholder = "수행평가 내용 입력 (예: 수학 3단원 형성평가)";
+
+        // 시험 생성 권한 체크 (admin, subadmin, teacher)
+        if (['admin', 'subadmin', 'teacher'].includes(currentUserRole)) {
+          examAdminBar.classList.remove('hidden');
+        } else {
+          examAdminBar.classList.add('hidden');
+        }
+
+        // 공지 작성 권한 체크 (admin, subadmin, teacher, subteacher)
+        if (['admin', 'subadmin', 'teacher', 'subteacher'].includes(currentUserRole)) {
+          noticeAdminBar.classList.remove('hidden');
+        } else {
+          noticeAdminBar.classList.add('hidden');
+        }
+
       } else {
-        currentUserProfile = null;
-        isAdmin = false;
+        currentUserRole = "user";
         userLabel.innerText = "비로그인 상태 (조회전용)";
         btnLogin.classList.remove('hidden');
         btnChangePw.classList.add('hidden');
         btnLogout.classList.add('hidden');
+
         inputContent.disabled = true;
+        inputLink.disabled = true;
+        inputDesc.disabled = true;
         btnSend.disabled = true;
         inputContent.placeholder = "로그인 후 수행평가 스케줄을 입력할 수 있습니다...";
+
+        examAdminBar.classList.add('hidden');
+        noticeAdminBar.classList.add('hidden');
       }
 
       if (cachedSchedules) renderSchedules(cachedSchedules);
+      if (cachedExamData) renderExamTS(cachedExamData);
+      if (cachedNoticeData) renderNoticeANCM(cachedNoticeData);
     });
 
     window.handleLogin = async () => {
@@ -460,14 +593,12 @@
         errorEl.innerText = "개인정보 이용약관에 동의해야 로그인할 수 있습니다.";
         return;
       }
-
       if (!name || !pw) {
         errorEl.innerText = "이름과 비밀번호를 입력하세요.";
         return;
       }
 
       const email = `${name}@school.jjy0205.site`;
-
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, pw);
         const user = userCredential.user;
@@ -484,11 +615,7 @@
           uid: user.uid,
           email: user.email,
           login_time: clientMeta.access_time,
-          client_metadata: {
-            ip: clientMeta.ip,
-            access_time: clientMeta.access_time,
-            userAgent: clientMeta.userAgent
-          }
+          client_metadata: clientMeta
         });
       } catch (err) {
         console.error(err);
@@ -530,7 +657,6 @@
         const clientMeta = await collectClientMetadata();
         const logRef = ref(db, 'log/PasswordChange');
         const newLogRef = push(logRef);
-
         await set(newLogRef, {
           uid: user.uid,
           email: user.email,
@@ -549,6 +675,13 @@
         }
       }
     };
+
+    // --- TAB 1: 스케줄러 로직 ---
+    const schedulesRef = ref(db, 'schedules');
+    onValue(schedulesRef, (snapshot) => {
+      cachedSchedules = snapshot.exists() ? snapshot.val() : null;
+      renderSchedules(cachedSchedules);
+    });
 
     function renderSchedules(snapshotValue) {
       const feed = document.getElementById('scheduleFeed');
@@ -580,7 +713,8 @@
         return aTime - bTime;
       });
 
-      const currentUid = auth.currentUser ? auth.currentUser.uid : null;
+      // 스케줄 편집/삭제 권한: admin, subadmin, teacher
+      const canManageSchedule = ['admin', 'subadmin', 'teacher'].includes(currentUserRole);
 
       visibleList.forEach(item => {
         const card = document.createElement('div');
@@ -589,14 +723,19 @@
         card.className = `schedule-card ${statusInfo.class}`;
 
         const pText = getPriorityText(priorityClass);
-        const canManage = !!currentUid && (currentUid === item.authorUid || isAdmin);
 
-        const actionButtonsHtml = canManage
-          ? `<div class="action-buttons">
-               <button class="btn-edit" onclick="editSchedule('${escapeJsArg(item.id)}')">✏️ 편집</button>
-               <button class="btn-delete" onclick="deleteSchedule('${escapeJsArg(item.id)}')">🗑️ 삭제</button>
-             </div>`
+        const actionButtonsHtml = canManageSchedule
+          ? `<button class="btn-edit" onclick="openEditScheduleModal('${escapeJsArg(item.id)}')">✏️ 편집</button>
+             <button class="btn-delete" onclick="deleteSchedule('${escapeJsArg(item.id)}')">🗑️ 삭제</button>`
           : '';
+
+        let detailsContent = '';
+        if (item.link) {
+          detailsContent += `<div>🔗 <b>첨부 링크:</b> <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.link)}</a></div>`;
+        }
+        if (item.description) {
+          detailsContent += `<div>📝 <b>상세 설명:</b> ${escapeHtml(item.description)}</div>`;
+        }
 
         card.innerHTML = `
           <div class="card-header">
@@ -605,75 +744,127 @@
             <span class="date-badge">${escapeHtml(statusInfo.tag)} (${escapeHtml(item.date || '')})</span>
           </div>
           <div class="card-title">${escapeHtml(item.content || '')}</div>
+
+          <div id="details-${escapeHtml(item.id)}" class="card-details hidden">
+            ${detailsContent || '<div style="color:#888;">추가 정보가 없습니다.</div>'}
+          </div>
+
           <div class="card-footer">
             <span>작성자: <b>${escapeHtml(item.authorName || '학생')}</b></span>
-            <div>
-              <span style="margin-right: 8px;">작성일: ${item.createdAt ? escapeHtml(String(item.createdAt).substring(0, 10)) : ''}</span>
+            <div class="action-buttons">
+              <button class="btn-toggle" onclick="toggleDetails('${escapeJsArg(item.id)}')">🔍 내용 보기</button>
               ${actionButtonsHtml}
             </div>
           </div>
         `;
-
         feed.appendChild(card);
       });
     }
 
-    function escapeJsArg(value) {
-      return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    }
+    window.toggleDetails = (id) => {
+      const el = document.getElementById(`details-${id}`);
+      if (el) {
+        el.classList.toggle('hidden');
+      }
+    };
 
-    const schedulesRef = ref(db, 'schedules');
-    onValue(schedulesRef, (snapshot) => {
-      cachedSchedules = snapshot.exists() ? snapshot.val() : null;
-      renderSchedules(cachedSchedules);
-    });
-
-    window.editSchedule = async (scheduleId) => {
+    window.uploadSchedule = async () => {
+      const date = document.getElementById('inputDate').value;
+      const subject = document.getElementById('inputSubject').value;
+      const priority = document.getElementById('inputPriority').value;
+      const content = document.getElementById('inputContent').value.trim();
+      const link = document.getElementById('inputLink').value.trim();
+      const description = document.getElementById('inputDesc').value.trim();
       const user = auth.currentUser;
-      const item = cachedSchedules && cachedSchedules[scheduleId];
 
-      if (!user || !item) {
-        alert("로그인이 필요하거나 스케줄을 찾을 수 없습니다.");
+      if (!date || !content) {
+        alert("날짜와 내용을 입력하세요.");
         return;
       }
-
-      if (user.uid !== item.authorUid && !isAdmin) {
-        alert("본인이 작성한 스케줄이거나 관리자만 편집할 수 있습니다.");
-        return;
-      }
-
-      const newContent = prompt("수정할 수행평가 내용을 입력하세요:", item.content || "");
-      if (newContent === null) return;
-      if (!newContent.trim()) {
-        alert("내용을 입력해야 합니다.");
+      if (!user) {
+        alert("로그인이 필요합니다.");
         return;
       }
 
       try {
-        await update(ref(db, `schedules/${scheduleId}`), {
-          content: newContent.trim(),
-          updatedAt: new Date().toISOString(),
-          updatedBy: user.uid
+        const userEmail = user.email || "";
+        const nameFallback = userEmail ? userEmail.split('@')[0] : "학생";
+        await push(ref(db, 'schedules'), {
+          date,
+          subject,
+          priority,
+          content,
+          link: link || "",
+          description: description || "",
+          authorUid: user.uid,
+          authorName: nameFallback,
+          createdAt: new Date().toISOString(),
+          deleted: false
         });
+
+        document.getElementById('inputContent').value = '';
+        document.getElementById('inputLink').value = '';
+        document.getElementById('inputDesc').value = '';
       } catch (err) {
-        alert("편집 실패: " + err.message);
+        alert("업로드 실패: " + err.message);
+      }
+    };
+
+    window.openEditScheduleModal = (id) => {
+      const item = cachedSchedules && cachedSchedules[id];
+      if (!item) return;
+
+      editingScheduleId = id;
+      document.getElementById('editDate').value = item.date || '';
+      document.getElementById('editSubject').value = item.subject || '국어';
+      document.getElementById('editPriority').value = item.priority || 'medium';
+      document.getElementById('editContent').value = item.content || '';
+      document.getElementById('editLink').value = item.link || '';
+      document.getElementById('editDesc').value = item.description || '';
+
+      document.getElementById('editScheduleModal').classList.remove('hidden');
+    };
+
+    window.closeEditScheduleModal = () => {
+      editingScheduleId = null;
+      document.getElementById('editScheduleModal').classList.add('hidden');
+    };
+
+    window.saveEditSchedule = async () => {
+      if (!editingScheduleId) return;
+
+      const date = document.getElementById('editDate').value;
+      const subject = document.getElementById('editSubject').value;
+      const priority = document.getElementById('editPriority').value;
+      const content = document.getElementById('editContent').value.trim();
+      const link = document.getElementById('editLink').value.trim();
+      const description = document.getElementById('editDesc').value.trim();
+
+      if (!date || !content) {
+        alert("날짜와 내용을 입력하세요.");
+        return;
+      }
+
+      try {
+        await update(ref(db, `schedules/${editingScheduleId}`), {
+          date,
+          subject,
+          priority,
+          content,
+          link,
+          description,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.currentUser.uid
+        });
+        closeEditScheduleModal();
+      } catch (err) {
+        alert("수정 실패: " + err.message);
       }
     };
 
     window.deleteSchedule = async (scheduleId) => {
       const user = auth.currentUser;
-      const item = cachedSchedules && cachedSchedules[scheduleId];
-
-      if (!user || !item) {
-        alert("로그인이 필요하거나 스케줄을 찾을 수 없습니다.");
-        return;
-      }
-
-      if (user.uid !== item.authorUid && !isAdmin) {
-        alert("본인이 작성한 스케줄이거나 관리자만 삭제할 수 있습니다.");
-        return;
-      }
-
+      if (!user) return;
       if (!confirm("정말 이 스케줄을 삭제하시겠습니까?")) return;
 
       try {
@@ -687,41 +878,229 @@
       }
     };
 
-    window.uploadSchedule = async () => {
-      const date = document.getElementById('inputDate').value;
-      const subject = document.getElementById('inputSubject').value;
-      const priority = document.getElementById('inputPriority').value;
-      const content = document.getElementById('inputContent').value.trim();
-      const user = auth.currentUser;
+    // --- TAB 2: 시험 범위 안내 (SchedulerTS) ---
+    const examRef = ref(db, 'SchedulerTS');
+    onValue(examRef, (snapshot) => {
+      cachedExamData = snapshot.exists() ? snapshot.val() : null;
+      renderExamTS(cachedExamData);
+    });
 
-      if (!date) {
-        alert("날짜를 선택하세요.");
+    window.addExamTitle = async () => {
+      const title = document.getElementById('inputExamTitle').value.trim();
+      if (!title) {
+        alert("시험 이름을 입력하세요.");
         return;
       }
-      if (!content) {
-        alert("수행평가 내용을 입력하세요.");
+      try {
+        await push(ref(db, 'SchedulerTS'), {
+          examTitle: title,
+          createdAt: new Date().toISOString(),
+          authorUid: auth.currentUser.uid
+        });
+        document.getElementById('inputExamTitle').value = '';
+      } catch (err) {
+        alert("생성 실패: " + err.message);
+      }
+    };
+
+    function renderExamTS(data) {
+      const feed = document.getElementById('examFeed');
+      feed.innerHTML = '';
+
+      if (!data) {
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 20px;">등록된 시험 정보가 없습니다.</div>';
         return;
       }
-      if (!user || !currentUserProfile) {
-        alert("로그인이 필요합니다.");
+
+      const canDelete = ['admin', 'subadmin', 'teacher', 'subteacher'].includes(currentUserRole);
+
+      Object.keys(data).forEach(examId => {
+        const exam = data[examId];
+        const card = document.createElement('div');
+        card.className = 'ts-card';
+
+        let itemsHtml = '';
+        if (exam.items) {
+          Object.keys(exam.items).forEach(itemId => {
+            const item = exam.items[itemId];
+            const deleteBtnHtml = canDelete
+              ? `<button class="btn-delete" onclick="deleteTSItem('${escapeJsArg(examId)}', '${escapeJsArg(itemId)}')">🗑️ 삭제</button>`
+              : '';
+
+            itemsHtml += `
+              <div class="subject-item">
+                <div class="subject-header" onclick="toggleSubjectBody('${escapeJsArg(itemId)}')">
+                  <span>📚 ${escapeHtml(item.subject)}</span>
+                  <div>
+                    <span style="font-size:0.8rem; color:#888; margin-right:6px;">👇 펼치기</span>
+                    ${deleteBtnHtml}
+                  </div>
+                </div>
+                <div id="subj-body-${escapeHtml(itemId)}" class="subject-body hidden">
+                  <div>${escapeHtml(item.rangeText)}</div>
+                  ${item.link ? `<div style="margin-top:4px;"><a href="${escapeHtml(item.link)}" target="_blank">🔗 관련 링크</a></div>` : ''}
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          itemsHtml = '<div style="font-size:0.85rem; color:#888; padding:8px 0;">등록된 과목별 범위가 없습니다.</div>';
+        }
+
+        const canAddSubject = auth.currentUser !== null;
+        const addBtnHtml = canAddSubject
+          ? `<button class="btn-toggle" style="margin-top:10px;" onclick="openAddTSItemModal('${escapeJsArg(examId)}')">➕ 과목 범위 추가</button>`
+          : '';
+
+        card.innerHTML = `
+          <div class="accordion-header" onclick="toggleExamContent('${escapeJsArg(examId)}')">
+            <span>📝 ${escapeHtml(exam.examTitle)}</span>
+            <span>▼</span>
+          </div>
+          <div id="exam-content-${escapeHtml(examId)}" class="accordion-content hidden">
+            ${itemsHtml}
+            ${addBtnHtml}
+          </div>
+        `;
+        feed.appendChild(card);
+      });
+    }
+
+    window.toggleExamContent = (examId) => {
+      const el = document.getElementById(`exam-content-${examId}`);
+      if (el) el.classList.toggle('hidden');
+    };
+
+    window.toggleSubjectBody = (itemId) => {
+      const el = document.getElementById(`subj-body-${itemId}`);
+      if (el) el.classList.toggle('hidden');
+    };
+
+    window.openAddTSItemModal = (examId) => {
+      activeExamIdForAdd = examId;
+      document.getElementById('tsRangeText').value = '';
+      document.getElementById('tsLinkInput').value = '';
+      document.getElementById('addTSItemModal').classList.remove('hidden');
+    };
+
+    window.closeAddTSItemModal = () => {
+      activeExamIdForAdd = null;
+      document.getElementById('addTSItemModal').classList.add('hidden');
+    };
+
+    window.saveTSItem = async () => {
+      if (!activeExamIdForAdd) return;
+      const subject = document.getElementById('tsSubjectSelect').value;
+      const rangeText = document.getElementById('tsRangeText').value.trim();
+      const link = document.getElementById('tsLinkInput').value.trim();
+
+      if (!rangeText) {
+        alert("시험 범위를 입력하세요.");
         return;
       }
 
       try {
-        await push(ref(db, 'schedules'), {
-          date,
+        await push(ref(db, `SchedulerTS/${activeExamIdForAdd}/items`), {
           subject,
-          priority,
+          rangeText,
+          link,
+          createdAt: new Date().toISOString(),
+          authorUid: auth.currentUser.uid
+        });
+        closeAddTSItemModal();
+      } catch (err) {
+        alert("추가 실패: " + err.message);
+      }
+    };
+
+    window.deleteTSItem = async (examId, itemId) => {
+      if (!confirm("이 시험 범위를 삭제하시겠습니까?")) return;
+      try {
+        await set(ref(db, `SchedulerTS/${examId}/items/${itemId}`), null);
+      } catch (err) {
+        alert("삭제 실패: " + err.message);
+      }
+    };
+
+    // --- TAB 3: 공지사항 (SchedulerANCM) ---
+    const noticeRef = ref(db, 'SchedulerANCM');
+    onValue(noticeRef, (snapshot) => {
+      cachedNoticeData = snapshot.exists() ? snapshot.val() : null;
+      renderNoticeANCM(cachedNoticeData);
+    });
+
+    window.uploadNotice = async () => {
+      const title = document.getElementById('inputNoticeTitle').value.trim();
+      const content = document.getElementById('inputNoticeContent').value.trim();
+      const user = auth.currentUser;
+
+      if (!title || !content) {
+        alert("제목과 내용을 모두 입력하세요.");
+        return;
+      }
+
+      try {
+        await push(ref(db, 'SchedulerANCM'), {
+          title,
           content,
           authorUid: user.uid,
-          authorName: currentUserProfile.name || "학생",
-          createdAt: new Date().toISOString(),
-          deleted: false
+          authorEmail: user.email,
+          createdAt: new Date().toISOString()
         });
 
-        document.getElementById('inputContent').value = '';
+        document.getElementById('inputNoticeTitle').value = '';
+        document.getElementById('inputNoticeContent').value = '';
       } catch (err) {
-        alert("업로드 실패: " + err.message);
+        alert("등록 실패: " + err.message);
+      }
+    };
+
+    function renderNoticeANCM(data) {
+      const feed = document.getElementById('noticeFeed');
+      feed.innerHTML = '';
+
+      if (!data) {
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 20px;">등록된 공지사항이 없습니다.</div>';
+        return;
+      }
+
+      const user = auth.currentUser;
+      const currentUid = user ? user.uid : null;
+
+      Object.keys(data).forEach(noticeId => {
+        const item = data[noticeId];
+        const card = document.createElement('div');
+        card.className = 'ancm-card';
+
+        // 삭제 권한: admin은 전체 삭제 가능, 타 권한은 본인 작성글만 가능
+        const canDelete = currentUserRole === 'admin' || (currentUid && currentUid === item.authorUid);
+
+        const deleteBtnHtml = canDelete
+          ? `<button class="btn-delete" onclick="deleteNotice('${escapeJsArg(noticeId)}')">🗑️ 삭제</button>`
+          : '';
+
+        card.innerHTML = `
+          <div class="card-header">
+            <span class="badge-subject" style="background:#e74c3c; color:white;">공지</span>
+            <span style="font-size:0.8rem; color:#888;">${item.createdAt ? escapeHtml(item.createdAt.substring(0,10)) : ''}</span>
+          </div>
+          <div class="card-title" style="font-weight:bold; font-size:1.05rem;">${escapeHtml(item.title)}</div>
+          <div style="font-size:0.9rem; color:#444; line-height:1.5; white-space:pre-wrap; margin:10px 0;">${escapeHtml(item.content)}</div>
+          <div class="card-footer">
+            <span>작성자: <b>${escapeHtml(item.authorEmail ? item.authorEmail.split('@')[0] : '관리자')}</b></span>
+            <div>${deleteBtnHtml}</div>
+          </div>
+        `;
+        feed.appendChild(card);
+      });
+    }
+
+    window.deleteNotice = async (noticeId) => {
+      if (!confirm("이 공지사항을 삭제하시겠습니까?")) return;
+      try {
+        await set(ref(db, `SchedulerANCM/${noticeId}`), null);
+      } catch (err) {
+        alert("삭제 실패: " + err.message);
       }
     };
 
@@ -741,10 +1120,12 @@
     window.closePrivacyTermsModal = () => {
       document.getElementById('privacyTermsModal').classList.add('hidden');
     };
+
     window.openChangePwModal = () => {
       document.getElementById('pwChangeError').innerText = '';
       document.getElementById('changePwModal').classList.remove('hidden');
     };
+
     window.closeChangePwModal = () => {
       document.getElementById('changePwModal').classList.add('hidden');
       document.getElementById('currentPw').value = '';
