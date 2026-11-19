@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "roles": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('roles').child(auth.uid).val() === 'admin')",
+        ".write": false
+      }
+    },
+    "logs": {
+      ".read": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'",
+      "$type": {
+        ".read": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'",
+        "$logId": {
+          ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && ($type !== 'admin' || root.child('roles').child(auth.uid).val() === 'admin')",
+          ".validate": "newData.hasChildren(['uid','timestamp','activity']) && newData.child('uid').isString() && newData.child('timestamp').isNumber() && newData.child('activity').isString()"
+        }
+      }
+    },
+    "restrictions": {
+      ".read": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'",
+      ".write": false,
+      "uidBan": {
+        "$uid": {
+          ".read": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'",
+          ".write": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'"
+        }
+      },
+      "uidTimeout": {
+        "$uid": {
+          ".read": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'",
+          ".write": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'"
+        }
+      }
+    },
+    "unavailableSchools": {
+      ".read": true,
+      "$schoolCode": {
+        ".write": "auth != null && root.child('roles').child(auth.uid).val() === 'admin'"
+      }
+    }
+  }
+}

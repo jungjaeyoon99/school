@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap');
+:root{font-family:"Noto Sans KR",system-ui,sans-serif;color:#172033;background:#f4f6fb;font-synthesis:none;text-rendering:optimizeLegibility}
+*{box-sizing:border-box}
+body{margin:0;min-width:320px}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.muted{color:#758096;font-size:.88rem}
+.topbar{height:68px;padding:0 max(22px,calc((100% - 1080px)/2));display:flex;align-items:center;justify-content:space-between;background:#172554;color:white}
+.brand{font-weight:800;font-size:1.2rem;color:white;text-decoration:none;letter-spacing:-.04em}
+.brand span{color:#93c5fd}
+.top-actions{display:flex;align-items:center;gap:12px}
+.top-actions .muted{color:#cbd5e1}
+.page{max-width:960px;margin:0 auto;padding:34px 20px 60px}
+.hero{padding:25px 4px 28px}
+.eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.13em;color:#6478a5;margin:0 0 8px}
+h1{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.06em;margin:0;color:#14234a}
+.hero-copy{color:#66738b;margin:12px 0 0}
+.panel{background:white;border:1px solid #e7ebf3;border-radius:18px;padding:25px;margin:0 0 18px;box-shadow:0 8px 30px rgba(30,48,90,.045)}
+.section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+h2{font-size:1.22rem;margin:0;letter-spacing:-.035em}
+.section-heading .eyebrow{margin-bottom:5px}
+.status-pill{border-radius:999px;padding:7px 11px;font-size:.76rem;font-weight:700;white-space:nowrap}
+.status-idle{background:#eef1f7;color:#68748a}
+.status-loading{background:#fff7df;color:#946200}
+.status-ok{background:#e6f7ee;color:#187247}
+.status-error{background:#ffeded;color:#b42318}
+.notice{padding:12px 14px;border-radius:10px;font-size:.87rem;line-height:1.55;margin-bottom:16px}
+.notice-info{background:#eff6ff;color:#315b91}
+.notice-warn{background:#fff8e7;color:#875b00}
+.notice-error{background:#fff0f0;color:#a12b2b}
+.search-row{display:flex;align-items:end;gap:10px}
+.grow{flex:1}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field>span{font-size:.82rem;font-weight:700;color:#4a5872}
+input,select{height:44px;border:1px solid #dce2ed;border-radius:9px;padding:0 12px;background:white;color:#172033;outline:none;min-width:0}
+input:focus,select:focus{border-color:#4777d4;box-shadow:0 0 0 3px #4777d41c}
+.button{border:0;border-radius:9px;padding:0 17px;height:44px;font-weight:700;white-space:nowrap}
+.button-primary{background:#2857b8;color:white}
+.button-primary:hover{background:#1e4699}
+.button-primary:disabled{opacity:.55;cursor:wait}
+.button-light{background:#edf2fb;color:#29436f}
+.button-quiet{background:transparent;color:white;border:1px solid #526487}
+.results{display:grid;gap:8px;margin-top:16px}
+.result-item{width:100%;border:1px solid #e2e8f2;background:#fff;border-radius:11px;padding:13px 15px;text-align:left;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.result-item:hover{border-color:#8aa9e5;background:#f8faff}
+.result-name{font-weight:700}
+.result-meta{font-size:.8rem;color:#78849a;margin-top:3px}
+.filters{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+.timetable-meta{margin:18px 0 10px}
+.timetable-wrap{overflow-x:auto}
+.timetable{width:100%;border-collapse:separate;border-spacing:5px;min-width:620px}
+.timetable th{font-size:.8rem;color:#64718a;font-weight:700;padding:9px}
+.timetable td{background:#f5f7fc;border-radius:9px;padding:10px;vertical-align:top;min-width:100px;height:76px}
+.timetable td.period{background:#eaf0fb;color:#35558d;text-align:center;font-weight:800;min-width:55px}
+.lesson{font-weight:700;font-size:.88rem;overflow-wrap:anywhere}
+.teacher{font-size:.72rem;color:#79869b;margin-top:5px}
+.replaced{font-size:.68rem;color:#b45309;margin-top:5px}
+.empty-state{padding:32px 12px;text-align:center;color:#8490a4;background:#f7f8fb;border-radius:12px}
+.small-panel h2{margin-bottom:12px}
+.small-panel p{line-height:1.65}
+.dialog{width:min(430px,calc(100% - 30px));border:0;border-radius:18px;padding:26px;box-shadow:0 20px 70px #0c183b45}
+.dialog::backdrop{background:#0c183b88;backdrop-filter:blur(3px)}
+.dialog-close-row{display:flex;justify-content:flex-end;margin:-12px -10px 8px}
+.icon-button{border:0;background:transparent;font-size:1.7rem;color:#6d7890}
+.stack{display:grid;gap:15px;margin-top:20px}
+.check-row{display:flex;align-items:center;gap:8px;color:#66738b;font-size:.85rem}
+.check-row input{height:auto}
+.auth-links{display:flex;justify-content:space-between}
+.auth-links button{border:0;background:none;color:#315cae;font-size:.82rem}
+.form-error{color:#b42318;font-size:.82rem;min-height:1em;margin:0}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#172554;color:white;padding:12px 18px;border-radius:10px;box-shadow:0 8px 25px #15254b33;transition:.2s;z-index:10;max-width:calc(100% - 30px);font-size:.88rem}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.admin-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.admin-block{padding:15px;border:1px solid #e5eaf2;border-radius:12px;margin:10px 0}
+.admin-block h3{margin:0 0 12px;font-size:1rem}
+.admin-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.admin-form .wide{grid-column:1/-1}
+.admin-list{display:grid;gap:8px;margin-top:12px}
+.admin-row{padding:11px;background:#f7f8fb;border-radius:8px;font-size:.83rem;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.admin-row button{border:0;color:#a12b2b;background:transparent}
+.footer{text-align:center;color:#98a2b3;font-size:.78rem;padding:24px}
+@media(max-width:680px){
+ .topbar{height:60px;padding:0 15px}.top-actions .muted{display:none}
+ .page{padding:22px 13px 42px}.hero{padding:20px 4px 22px}
+ .panel{padding:18px 15px;border-radius:14px}
+ .search-row{align-items:stretch;flex-direction:column}.search-row .button{width:100%}
+ .filters{grid-template-columns:1fr 1fr}.filters .button{grid-column:1/-1}
+ .section-heading{align-items:flex-start}
+ .admin-form{grid-template-columns:1fr}
+ .admin-form .wide{grid-column:auto}
+}
