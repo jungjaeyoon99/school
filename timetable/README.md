@@ -10,7 +10,7 @@
 
 ## 배포
 1. `firebase.js`의 `apiKey`를 Firebase 콘솔의 실제 Web API Key로 교체합니다.
-2. Firebase Authentication에서 Google 로그인 제공업체를 켜고 GitHub Pages 도메인을 승인 도메인에 추가합니다.
+2. Firebase Authentication에서 이메일/비밀번호 로그인 제공업체를 켜고 GitHub Pages 도메인을 승인 도메인에 추가합니다.
 3. 기존 RTDB 규칙을 백업하고 이 파일의 규칙을 기존 규칙과 병합합니다. 기존 규칙 전체를 덮어쓰지 마세요.
 4. 일곱 파일을 GitHub 저장소에 올리고 Pages로 배포합니다.
 
@@ -22,7 +22,7 @@
 `firebase.js`의 `COMCIGAN_FETCH_RELAY`에는 별도의 HTTPS·CORS 중계 서비스 주소를 설정할 수 있습니다. 이 앱은 중계 서버에 POST JSON `{url, method, headers, bodyBase64}`를 보내고, 중계 서버가 `{status, bodyBase64}` JSON으로 답하는 형식을 기대합니다. **중계 서버는 이 ZIP에 포함되어 있지 않습니다.** 따라서 중계 주소가 없으면 HTTPS 브라우저에서 실시간 Comcigan 조회가 차단될 수 있습니다. 순수 정적 HTML/JS만으로 브라우저 보안 제한을 우회할 수는 없습니다.
 
 ## Pyodide / pycomcigan
-Pyodide 0.29.5를 사용하고 `pycomcigan==1.4.1`을 `deps=False`로 설치합니다. Pyodide의 `Crypto`를 `Cryptodome` 이름으로 연결합니다. Python의 `urllib.request.urlopen`을 브라우저 fetch 브리지로 대체합니다. 학교 검색 결과는 `[지역 코드, 지역명, 학교명, 학교 코드]` 형식입니다.
+Pyodide 0.29.5를 사용하고 `pycomcigan==1.4.1`을 `deps=False`로 설치합니다. pycomcigan 내부에서 사용하는 `requests`는 Pyodide 배포 패키지로 별도 로드합니다. Pyodide의 `Crypto`를 `Cryptodome` 이름으로 연결합니다. Python의 `urllib.request.urlopen`을 브라우저 fetch 브리지로 대체합니다. 학교 검색 결과는 `[지역 코드, 지역명, 학교명, 학교 코드]` 형식입니다.
 
 ## IP 및 로그 관련 한계
 이 버전은 IP 주소를 수집하지 않습니다. 정적 브라우저 코드만으로 공인 IP를 신뢰성 있게 확인하거나 IP 차단을 강제할 수 없습니다. UID 차단은 Firebase DB에 저장되며, 실질적인 접근 제어는 RTDB 규칙에서도 검사해야 합니다. 클라이언트 로그는 조작 가능하므로 감사용 보안 로그로 간주하면 안 됩니다.

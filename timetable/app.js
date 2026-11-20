@@ -8,7 +8,7 @@ function configured(){return window.FIREBASE_CONFIG?.apiKey&&!window.FIREBASE_CO
 async function authChanged(user){
  state.user=user||null;state.admin=false;
  $("auth-status").textContent=user?(user.displayName||user.email||"로그인됨"):"로그인하지 않음";
- $("login").hidden=!!user;$("logout").hidden=!user;$("admin").hidden=true;
+ $("auth-panel").hidden=!!user;$("logout").hidden=!user;$("admin").hidden=true;
  if(!user)return;
  try{
   const role=(await firebase.database().ref("roles/"+user.uid).once("value")).val();
@@ -18,11 +18,22 @@ async function authChanged(user){
   await ref.set({uid:user.uid,email:user.email||"",displayName:user.displayName||"",timestamp:firebase.database.ServerValue.TIMESTAMP,userAgent:navigator.userAgent||"",page:location.pathname});
  }catch(e){message("권한 확인 또는 로그 저장 실패: "+e.message,true)}
 }
+function authCredentials(){
+ const email=$("auth-email").value.trim(),password=$("auth-password").value;
+ if(!email||!password){message("이메일과 비밀번호를 입력하세요.",true);return null}
+ if(password.length<6){message("비밀번호는 6자 이상이어야 합니다.",true);return null}
+ return {email,password};
+}
 function initFirebase(){
- if(!configured()){$("auth-status").textContent="firebase.js에 API Key 입력 필요";$("login").disabled=true;return}
- try{if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);firebase.auth().onAuthStateChanged(authChanged);
- $("login").onclick=()=>firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>message("로그인 실패: "+e.message,true));
- $("logout").onclick=()=>firebase.auth().signOut()}catch(e){message("Firebase 초기화 실패: "+e.message,true)}
+ if(!configured()){$("auth-status").textContent="firebase.js에 API Key 입력 필요";["login","register","reset-password"].forEach(id=>$(id).disabled=true);return}
+ try{
+  if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+  firebase.auth().onAuthStateChanged(authChanged);
+  $("login").onclick=()=>{const c=authCredentials();if(!c)return;firebase.auth().signInWithEmailAndPassword(c.email,c.password).catch(e=>message("로그인 실패: "+e.message,true))};
+  $("register").onclick=()=>{const c=authCredentials();if(!c)return;firebase.auth().createUserWithEmailAndPassword(c.email,c.password).then(()=>message("회원가입이 완료되었습니다.")).catch(e=>message("회원가입 실패: "+e.message,true))};
+  $("reset-password").onclick=()=>{const email=$("auth-email").value.trim();if(!email)return message("비밀번호 재설정 이메일을 입력하세요.",true);firebase.auth().sendPasswordResetEmail(email).then(()=>message("비밀번호 재설정 이메일을 보냈습니다.")).catch(e=>message("재설정 메일 발송 실패: "+e.message,true))};
+  $("logout").onclick=()=>firebase.auth().signOut();
+ }catch(e){message("Firebase 초기화 실패: "+e.message,true)}
 }
 async function startPython(){
  try{await TimetablePython.initialize();state.python=true;$("python-status").textContent="Python 준비 완료";$("school-search").disabled=false;$("load").disabled=false;$("hint").textContent="학교명을 검색하거나 입력하세요."}
@@ -42,7 +53,7 @@ async function searchSchools(){
  }catch(e){message("학교 검색 실패:\\n"+e.message,true)}finally{busy($("school-search"),false)}
 }
 async function loadTable(){
- clearMessage();if(!state.user)return message("시간표 조회 전에 Google 로그인이 필요합니다.",true);
+ clearMessage();if(!state.user)return message("시간표 조회 전에 이메일 계정으로 로그인해야 합니다.",true);
  const name=$("school-name").value.trim(),cls=+$("class-number").value;if(!name||!Number.isInteger(cls)||cls<1)return message("학교명과 올바른 반 번호를 입력하세요.",true);
  busy($("load"),true,"불러오는 중...");$("result").hidden=true;
  try{

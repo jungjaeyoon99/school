@@ -88,7 +88,7 @@ async function bridged(expr){
 }
 async function initialize(){
  if(initPromise)return initPromise;
- initPromise=(async()=>{py=await loadPyodide({indexURL:BASE});await py.loadPackage(["micropip","pycryptodome"]);await py.runPythonAsync(PY);await py.runPythonAsync("await install_library()")})();
+ initPromise=(async()=>{py=await loadPyodide({indexURL:BASE});await py.loadPackage(["micropip","pycryptodome","requests"]);await py.runPythonAsync(PY);await py.runPythonAsync("await install_library()")})();
  try{await initPromise}catch(e){initPromise=null;throw e}
 }
 async function convert(p){try{return p.toJs({dict_converter:Object.fromEntries})}finally{p.destroy()}}

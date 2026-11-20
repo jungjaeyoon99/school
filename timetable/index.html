@@ -6,8 +6,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.js"></script></head>
 <body><header><b>학교 시간표</b><div><span id="auth-status">로그인 상태 확인 중</span>
-<button id="login">Google 로그인</button><button id="logout" hidden>로그아웃</button></div></header>
+<button id="logout" hidden>로그아웃</button></div></header>
 <main><section class="intro"><small>TIMETABLE SERVICE</small><h1>우리 학교 시간표</h1><p>학교와 학년·반을 선택해 주간 시간표를 확인하세요.</p></section>
+<section id="auth-panel" class="card auth-card"><div class="heading"><div><small>ACCOUNT</small><h2>이메일 로그인</h2></div></div>
+<p class="auth-description">이메일과 비밀번호로 로그인하거나 새 계정을 만드세요.</p>
+<div class="auth-fields"><label>이메일<input id="auth-email" type="email" autocomplete="email" placeholder="example@email.com"></label>
+<label>비밀번호<input id="auth-password" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상"></label></div>
+<div class="actions"><button id="login" type="button">로그인</button><button id="register" type="button">회원가입</button><button id="reset-password" type="button" class="secondary">비밀번호 재설정</button></div></section>
 <section class="card"><div class="heading"><div><small>SEARCH</small><h2>시간표 조회</h2></div><span id="python-status">Python 준비 중</span></div>
 <div class="grid">
 <label class="wide">학교명<div class="inline"><input id="school-name" placeholder="예: 경기북과학고"><button id="school-search" disabled>학교 검색</button></div></label>
