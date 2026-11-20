@@ -1,104 +1,28 @@
 <!doctype html>
-<html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#172554">
-  <title>학교 시간표 조회</title>
-  <link rel="stylesheet" href="./style.css">
-  <!-- Pyodide는 브라우저에서 Python을 실행합니다. 버전을 고정해 예측 가능성을 높입니다. -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
-  <script type="module" src="./app.js"></script>
-</head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="시간표 홈">시간표 <span>조회</span></a>
-    <div class="top-actions">
-      <span id="auth-state" class="muted">로그인하지 않음</span>
-      <button id="login-open" class="button button-light">로그인</button>
-      <button id="logout" class="button button-quiet hidden">로그아웃</button>
-    </div>
-  </header>
-
-  <main class="page">
-    <section class="hero">
-      <p class="eyebrow">SCHOOL TIMETABLE</p>
-      <h1>우리 학교 시간표</h1>
-      <p class="hero-copy">학교를 검색하고 학년·반을 선택해 시간표를 확인하세요.</p>
-    </section>
-
-    <section class="panel search-panel">
-      <div class="section-heading">
-        <div><p class="eyebrow">STEP 01</p><h2>학교 검색</h2></div>
-        <span id="python-status" class="status-pill status-idle">Python 준비 전</span>
-      </div>
-      <div id="python-message" class="notice notice-info">
-        첫 검색 시 브라우저 Python 런타임과 패키지를 불러옵니다. 최초 실행에는 시간이 걸릴 수 있습니다.
-      </div>
-      <form id="school-search-form" class="search-row">
-        <label class="field grow">
-          <span>지역 또는 학교명</span>
-          <input id="school-query" type="search" placeholder="예: 경기북과학고 또는 경기" required maxlength="60">
-        </label>
-        <button id="school-search-button" class="button button-primary" type="submit">학교 검색</button>
-      </form>
-      <div id="school-results" class="results" aria-live="polite"></div>
-    </section>
-
-    <section id="timetable-panel" class="panel hidden">
-      <div class="section-heading">
-        <div><p class="eyebrow">STEP 02</p><h2 id="selected-school-title">시간표 조회</h2></div>
-        <span id="selected-school-meta" class="muted"></span>
-      </div>
-      <form id="timetable-form" class="filters">
-        <label class="field"><span>학년</span><select id="grade-select" required><option value="">학년 선택</option></select></label>
-        <label class="field"><span>반</span><select id="class-select" required><option value="">반 선택</option></select></label>
-        <label class="field"><span>주차</span>
-          <select id="week-select"><option value="0">이번 주</option><option value="1">다음 주</option></select>
-        </label>
-        <button id="timetable-button" class="button button-primary" type="submit">시간표 조회</button>
-      </form>
-      <div id="timetable-meta" class="muted timetable-meta"></div>
-      <div id="timetable-output" class="timetable-wrap" aria-live="polite">
-        <div class="empty-state">학년과 반을 선택한 후 시간표를 조회하세요.</div>
-      </div>
-    </section>
-
-    <section id="admin-panel" class="panel hidden">
-      <div class="section-heading">
-        <div><p class="eyebrow">ADMIN</p><h2>관리자 패널</h2></div>
-        <span class="status-pill status-ok">관리자</span>
-      </div>
-      <p class="muted">정적 사이트의 관리자 화면입니다. 실제 권한은 Firebase Rules가 최종적으로 통제합니다.</p>
-      <div class="admin-tabs">
-        <button class="button button-light" data-admin-tab="restrictions">차단 설정</button>
-        <button class="button button-light" data-admin-tab="unavailable">조회 불가능 학교</button>
-        <button class="button button-light" data-admin-tab="logs">활동 로그</button>
-      </div>
-      <div id="admin-content"></div>
-    </section>
-
-    <section class="panel small-panel">
-      <h2>이용 안내 및 개인정보</h2>
-      <p class="muted">로그인한 사용자의 활동 유형과 검색·조회 결과를 기록할 수 있습니다. 이 정적 버전은 접속 IP를 신뢰성 있게 확인하지 않으며, IP 기반 차단을 보안 통제로 보장하지 않습니다.</p>
-      <p class="muted">Firebase 설정 및 데이터베이스 규칙을 적용하기 전에는 인증·저장 기능이 작동하지 않습니다. 비밀번호는 이 사이트의 데이터베이스에 저장하지 않습니다.</p>
-    </section>
-  </main>
-
-  <dialog id="auth-dialog" class="dialog">
-    <form method="dialog" class="dialog-close-row"><button class="icon-button" aria-label="닫기">×</button></form>
-    <h2 id="auth-title">로그인</h2>
-    <form id="auth-form" class="stack">
-      <label class="field"><span>이메일</span><input id="auth-email" type="email" autocomplete="username" required></label>
-      <label class="field"><span>비밀번호</span><input id="auth-password" type="password" autocomplete="current-password" required minlength="6"></label>
-      <label class="check-row"><input id="remember-login" type="checkbox" checked> 로그인 유지</label>
-      <button id="auth-submit" class="button button-primary" type="submit">로그인</button>
-      <div class="auth-links"><button type="button" id="switch-signup">회원가입</button><button type="button" id="reset-password">비밀번호 재설정</button></div>
-      <p id="auth-error" class="form-error" role="alert"></p>
-    </form>
-  </dialog>
-
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <footer class="footer">학교 시간표 조회 · 비공식 시간표 조회 도구</footer>
-</body>
-</html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>학교 시간표</title><link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.js"></script></head>
+<body><header><b>학교 시간표</b><div><span id="auth-status">로그인 상태 확인 중</span>
+<button id="login">Google 로그인</button><button id="logout" hidden>로그아웃</button></div></header>
+<main><section class="intro"><small>TIMETABLE SERVICE</small><h1>우리 학교 시간표</h1><p>학교와 학년·반을 선택해 주간 시간표를 확인하세요.</p></section>
+<section class="card"><div class="heading"><div><small>SEARCH</small><h2>시간표 조회</h2></div><span id="python-status">Python 준비 중</span></div>
+<div class="grid">
+<label class="wide">학교명<div class="inline"><input id="school-name" placeholder="예: 경기북과학고"><button id="school-search" disabled>학교 검색</button></div></label>
+<label>지역 코드(선택)<input id="local-code" type="number" placeholder="자동 검색"></label>
+<label>학교 코드(선택)<input id="school-code" type="number" placeholder="자동 검색"></label>
+<label>학년<select id="grade"><option>1</option><option>2</option><option>3</option></select></label>
+<label>반<input id="class-number" type="number" min="1" value="1"></label>
+<label>조회 주<select id="week-number"><option value="0">이번 주</option><option value="1">다음 주</option></select></label></div>
+<div id="school-results" hidden></div><div class="actions"><button id="load" disabled>시간표 불러오기</button><span id="hint">Python 엔진 준비 중</span></div></section>
+<div id="message" hidden role="status"></div>
+<section id="result" class="card" hidden><div class="heading"><div><small>WEEKLY VIEW</small><h2 id="result-title">시간표</h2><p id="result-meta"></p></div><button id="print">인쇄</button></div><div class="table-wrap" id="table-wrap"></div></section>
+<section id="admin" class="card" hidden><div class="heading"><h2>관리자 도구</h2><b>관리자</b></div>
+<p>관리자 권한은 RTDB의 roles/{uid} 값이 admin인지 확인합니다.</p>
+<label>차단할 사용자 UID<input id="blocked-uid" placeholder="Firebase Auth UID"></label>
+<div class="actions"><button id="block">UID 차단</button><button id="unblock">차단 해제</button><button id="refresh-logs">로그 새로고침</button></div><div id="logs"></div></section>
+<aside><b>중요한 네트워크 안내</b><p>Comcigan 원본 요청은 HTTP 주소를 사용합니다. HTTPS GitHub Pages에서 브라우저가 직접 요청하면 혼합 콘텐츠 또는 CORS 정책으로 차단될 수 있습니다. 이 경우 HTTPS·CORS를 지원하는 별도 중계 서버가 필요합니다. 순수 정적 코드만으로 브라우저 보안 제한을 해제할 수는 없습니다.</p></aside>
+<footer>Powered by Pyodide · pycomcigan · Firebase</footer></main>
+<script src="firebase.js"></script><script src="python.js"></script><script src="app.js"></script></body></html>

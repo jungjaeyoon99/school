@@ -1,157 +1,101 @@
-/*
- * Pyodide + pycomcigan 브라우저 어댑터
- *
- * 중요:
- * - 런타임은 한 번만 초기화합니다.
- * - pycomcigan 1.4.5는 pycryptodomex에 의존합니다.
- * - pycomcigan의 현재 소스는 http://comci.net:4082 로 요청합니다.
- *   HTTPS GitHub Pages에서 HTTP 요청은 Mixed Content로 차단될 수 있습니다.
- * - 따라서 설치 성공만으로 실시간 시간표 조회가 가능하다고 판단하지 않습니다.
- */
-const PYODIDE_VERSION = "0.27.7";
-const PYCOMCIGAN_VERSION = "1.4.5";
-
-let runtimePromise = null;
-let pyodide = null;
-let packageReady = false;
-
-const PYTHON_BRIDGE = `
-import json
-from pycomcigan import TimeTable, get_school_code
-
-def js_search_schools(query):
-    rows = get_school_code(query)
-    return json.dumps(rows, ensure_ascii=False)
-
-def js_get_timetable(school_name, local_code, school_code, week_num):
-    table = TimeTable(
-        school_name,
-        local_code=int(local_code),
-        school_code=int(school_code),
-        week_num=int(week_num)
-    )
-    days = []
-    # pycomcigan timetable: grade -> class -> weekday -> period
-    for day_index, day in enumerate(table.timetable[int(_grade)][int(_class)]):
-        if day_index == 0:
-            continue
-        lessons = []
-        for item in day:
-            lessons.append({
-                "period": int(item.period),
-                "subject": str(item.subject or ""),
-                "teacher": str(item.teacher or ""),
-                "replaced": bool(item.replaced),
-                "original": str(item.original) if item.original else ""
-            })
-        days.append(lessons)
-    return json.dumps({
-        "schoolName": table.school_name,
-        "regionName": table.local_name,
-        "schoolYear": str(table.school_year),
-        "updateDate": str(table.update_date),
-        "homeroom": str(table.homeroom(int(_grade), int(_class)) or ""),
-        "days": days,
-        "gradeCount": max(0, len(table.timetable)-1),
-        "classCount": max(0, len(table.timetable[int(_grade)])-1)
-    }, ensure_ascii=False)
+(() => {
+"use strict";
+const VERSION="0.29.5", BASE=`https://cdn.jsdelivr.net/pyodide/v${VERSION}/full/`;
+let py=null, initPromise=null;
+const PY=String.raw`
+import sys, json, io, base64, urllib.request, urllib.error
+class BrowserFetchRequired(Exception): pass
+_responses=[]; _response_index=0
+class BrowserResponse:
+ def __init__(self,p):
+  self.status=int(p.get("status",200)); self.code=self.status
+  self.headers=p.get("headers",{}); self.stream=io.BytesIO(base64.b64decode(p.get("bodyBase64","")))
+ def read(self,n=-1): return self.stream.read(n)
+ def close(self): self.stream.close()
+ def __enter__(self): return self
+ def __exit__(self,*a): self.close()
+def browser_urlopen(url,data=None,timeout=30,**kwargs):
+ global _response_index
+ if isinstance(url,urllib.request.Request):
+  req=url; target=req.full_url; method=req.get_method(); headers=dict(req.header_items()); body=req.data
+ else:
+  target=str(url); method="POST" if data is not None else "GET"; headers={}; body=data
+ if _response_index>=len(_responses):
+  payload={"url":target,"method":method,"headers":headers,"bodyBase64":base64.b64encode(body).decode() if body else None}
+  raise BrowserFetchRequired("BROWSER_FETCH_REQUIRED:"+json.dumps(payload,ensure_ascii=False))
+ p=_responses[_response_index]; _response_index+=1; response=BrowserResponse(p)
+ if response.status>=400: raise urllib.error.HTTPError(target,response.status,"HTTP error",response.headers,None)
+ return response
+def bridge_begin():
+ global _response_index
+ _response_index=0
+def bridge_push(s): _responses.append(json.loads(s))
+def bridge_end():
+ global _responses,_response_index
+ _responses=[]; _response_index=0
+urllib.request.urlopen=browser_urlopen
+async def install_library():
+ import micropip
+ await micropip.install("pycomcigan==1.4.1",deps=False)
+ import Crypto, Crypto.Util, Crypto.Util.Padding
+ sys.modules["Cryptodome"]=Crypto
+ sys.modules["Cryptodome.Util"]=Crypto.Util
+ sys.modules["Cryptodome.Util.Padding"]=Crypto.Util.Padding
+ from pycomcigan import TimeTable, get_school_code
+def search_schools(name):
+ from pycomcigan import get_school_code
+ return get_school_code(name)
+def get_timetable(name,local_code,school_code,week,grade,cls):
+ from pycomcigan import TimeTable
+ t=TimeTable(name,local_code=int(local_code or 0),school_code=int(school_code or 0),week_num=int(week))
+ days=t.timetable[int(grade)][int(cls)]
+ output=[]
+ for day_i,day in enumerate(days):
+  if day_i==0: continue
+  lessons=[]
+  for x in day:
+   lessons.append({"period":int(x.period),"subject":str(x.subject or ""),"teacher":str(x.teacher or ""),"replaced":bool(x.replaced),"original":({"subject":str(x.original.subject or "")} if x.original else None)})
+  output.append(lessons)
+ return {"schoolName":t.school_name,"localName":t.local_name,"schoolYear":t.school_year,"updateDate":str(t.update_date),"days":output}
 `;
-
-export function getPythonStatus() {
-  return { initialized: !!pyodide, packageReady };
+function decodeFetchError(e){
+ const marker="BROWSER_FETCH_REQUIRED:",s=String(e?.message||e),i=s.indexOf(marker);
+ if(i<0)return null; try{return JSON.parse(s.slice(i+marker.length).split(/\r?\n/)[0])}catch{return null}
 }
-
-export async function initializePython(onProgress = () => {}) {
-  if (runtimePromise) return runtimePromise;
-  runtimePromise = (async () => {
-    onProgress("브라우저 Python 런타임 다운로드 중…");
-    if (typeof loadPyodide !== "function") {
-      throw new Error("Pyodide 스크립트를 불러오지 못했습니다. 네트워크 또는 CDN 접근을 확인하세요.");
-    }
-    pyodide = await loadPyodide({
-      indexURL: `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`
-    });
-    onProgress("Python 패키지 설치 도구 준비 중…");
-    await pyodide.loadPackage("micropip");
-    onProgress(`pycomcigan ${PYCOMCIGAN_VERSION} 설치 가능 여부 확인 중…`);
-    const micropip = pyodide.pyimport("micropip");
-    try {
-      await micropip.install(`pycomcigan==${PYCOMCIGAN_VERSION}`);
-      pyodide.runPython(PYTHON_BRIDGE);
-      // 실제 import 성공만 확인. 컴시간 서버 통신 성공을 의미하지는 않습니다.
-      pyodide.runPython("import pycomcigan; print('pycomcigan import OK')");
-      packageReady = true;
-      onProgress("Python 및 pycomcigan 설치 완료. 실제 통신은 검색 단계에서 검증합니다.");
-      return pyodide;
-    } catch (error) {
-      packageReady = false;
-      const message = String(error?.message || error);
-      throw new Error(
-        "pycomcigan 설치 또는 의존성 로딩에 실패했습니다. " +
-        "현재 패키지는 pycryptodomex(네이티브 암호화 구현)에 의존하므로 " +
-        "Pyodide용 호환 wheel이 없으면 브라우저 설치가 불가능합니다. " + message
-      );
-    }
-  })().catch(error => {
-    // 실패한 Promise를 캐시하지 않아 재시도 버튼으로 다시 시도할 수 있습니다.
-    runtimePromise = null;
-    throw error;
-  });
-  return runtimePromise;
+function toBase64(buf){
+ const b=new Uint8Array(buf);let s="";for(let i=0;i<b.length;i+=32768)s+=String.fromCharCode(...b.subarray(i,i+32768));return btoa(s)
 }
-
-export async function searchSchools(query, onProgress) {
-  const runtime = await initializePython(onProgress);
-  if (!packageReady) throw new Error("pycomcigan 패키지가 준비되지 않았습니다.");
-  runtime.globals.set("_school_query", query);
-  try {
-    const result = runtime.runPython("js_search_schools(_school_query)");
-    return JSON.parse(result);
-  } finally {
-    runtime.globals.delete("_school_query");
+async function browserFetch(req){
+ const relay=String(window.COMCIGAN_FETCH_RELAY||"").trim();
+ if(relay){
+  const r=await fetch(relay,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(req)});
+  if(!r.ok)throw Error(`중계 서버 HTTP ${r.status}`);
+  const p=await r.json();if(typeof p.status!=="number"||typeof p.bodyBase64!=="string")throw Error("중계 서버 응답 형식 오류");return p;
+ }
+ let r;
+ try{r=await fetch(req.url,{method:req.method||"GET",headers:req.headers||{},mode:"cors",credentials:"omit",cache:"no-store"})}
+ catch(e){throw Error("브라우저에서 Comcigan 원본 서버에 연결할 수 없습니다. HTTP 혼합 콘텐츠 또는 CORS 차단일 수 있습니다. HTTPS·CORS 중계 주소를 firebase.js의 COMCIGAN_FETCH_RELAY에 설정해야 합니다. 원인: "+e.message)}
+ return {status:r.status,bodyBase64:toBase64(await r.arrayBuffer()),headers:{}};
+}
+async function bridged(expr){
+ py.runPython("bridge_begin()");
+ try{
+  while(true){
+   try{return await py.runPythonAsync(expr)}
+   catch(e){const req=decodeFetchError(e);if(!req)throw e;const response=await browserFetch(req);py.runPython(`bridge_push(${JSON.stringify(JSON.stringify(response))})`)}
   }
+ }finally{py.runPython("bridge_end()")}
 }
-
-export async function getTimetable({schoolName, localCode, schoolCode, grade, classNo, weekNum}, onProgress) {
-  const runtime = await initializePython(onProgress);
-  if (!packageReady) throw new Error("pycomcigan 패키지가 준비되지 않았습니다.");
-  runtime.globals.set("_school_name", schoolName);
-  runtime.globals.set("_local_code", Number(localCode));
-  runtime.globals.set("_school_code", Number(schoolCode));
-  runtime.globals.set("_week_num", Number(weekNum));
-  runtime.globals.set("_grade", Number(grade));
-  runtime.globals.set("_class", Number(classNo));
-  try {
-    const source = `
-def _run_table():
-    table = TimeTable(_school_name, local_code=_local_code, school_code=_school_code, week_num=_week_num)
-    days = []
-    for day_index, day in enumerate(table.timetable[int(_grade)][int(_class)]):
-        if day_index == 0: continue
-        lessons = []
-        for item in day:
-            lessons.append({
-                "period": int(item.period),
-                "subject": str(item.subject or ""),
-                "teacher": str(item.teacher or ""),
-                "replaced": bool(item.replaced),
-                "original": str(item.original) if item.original else ""
-            })
-        days.append(lessons)
-    return json.dumps({
-        "schoolName": table.school_name,
-        "regionName": table.local_name,
-        "schoolYear": str(table.school_year),
-        "updateDate": str(table.update_date),
-        "homeroom": str(table.homeroom(int(_grade), int(_class)) or ""),
-        "days": days,
-        "gradeCount": max(0, len(table.timetable)-1),
-        "classCount": max(0, len(table.timetable[int(_grade)])-1)
-    }, ensure_ascii=False)
-_run_table()
-`;
-    return JSON.parse(runtime.runPython(source));
-  } finally {
-    ["_school_name","_local_code","_school_code","_week_num","_grade","_class"].forEach(k => runtime.globals.delete(k));
-  }
+async function initialize(){
+ if(initPromise)return initPromise;
+ initPromise=(async()=>{py=await loadPyodide({indexURL:BASE});await py.loadPackage(["micropip","pycryptodome"]);await py.runPythonAsync(PY);await py.runPythonAsync("await install_library()")})();
+ try{await initPromise}catch(e){initPromise=null;throw e}
 }
+async function convert(p){try{return p.toJs({dict_converter:Object.fromEntries})}finally{p.destroy()}}
+window.TimetablePython={
+ initialize,
+ async searchSchools(n){await initialize();return convert(await bridged(`search_schools(${JSON.stringify(n)})`))},
+ async getTimetable(o){await initialize();const a=[JSON.stringify(o.schoolName),JSON.stringify(o.localCode||0),JSON.stringify(o.schoolCode||0),+o.weekNum,+o.grade,+o.classNum].join(",");return convert(await bridged(`get_timetable(${a})`))},
+ version:VERSION
+};
+})();
