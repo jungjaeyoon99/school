@@ -1,6 +1,6 @@
 /* 기존 Firebase 프로젝트 설정. 실제 Web API Key를 입력하세요. */
 window.FIREBASE_CONFIG={
- apiKey:"REPLACE_WITH_YOUR_FIREBASE_WEB_API_KEY",
+ apiKey:"AIzaSyCwequlIjEHwg-wfSmfqGOq8NPZQdPhwls",
  authDomain:"school-timetable-view.firebaseapp.com",
  databaseURL:"https://school-timetable-view-default-rtdb.firebaseio.com",
  projectId:"school-timetable-view",
