@@ -430,3 +430,69 @@ async def comcigan_diagnostics(
         diagnose_comcigan,
         query
     )
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------------------------------------
+# for test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import requests
+
+@app.get("/api/diagnostics/direct")
+async def direct_diagnostics():
+    url = "http://comci.net:4082/st"
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Linux; Android 13) "
+            "AppleWebKit/537.36 "
+            "(KHTML, like Gecko) "
+            "Chrome/120.0.0.0 Mobile Safari/537.36"
+        )
+    }
+
+    try:
+        response = await run_in_threadpool(
+            lambda: requests.get(
+                url,
+                headers=headers,
+                timeout=20
+            )
+        )
+
+        return {
+            "success": response.status_code == 200,
+            "status_code": response.status_code,
+            "final_url": response.url,
+            "content_type": response.headers.get("Content-Type"),
+            "response_length": len(response.content),
+            "body_preview": response.text[:300]
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
