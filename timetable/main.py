@@ -1,3 +1,6 @@
+from pycomcigan.helpers import get_comcigan_response_for_codes, school_search
+from pycomcigan.service_page import decode_service_page
+from pycomcigan.service_protocol import parse_service_protocol
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -349,3 +352,81 @@ async def get_homeroom(
             status_code=502,
             detail=f"담임 조회 실패: {str(e)}"
         )
+
+
+
+# ==================================================
+# 컴시간 연결 진단
+# ==================================================
+
+def diagnose_comcigan(query: str):
+    # 1. 컴시간 서비스 페이지 접속
+    try:
+        response = get_comcigan_response_for_codes()
+
+        page_status = response.status_code
+
+    except Exception as e:
+        return {
+            "stage": "service_page",
+            "success": False,
+            "message": str(e)
+        }
+
+    # 2. 페이지 분석 및 토큰 추출
+    try:
+        content = decode_service_page(response.text)
+        protocol = parse_service_protocol(content)
+
+        token_detected = protocol.request_token is not None
+
+    except Exception as e:
+        return {
+            "stage": "protocol_parsing",
+            "success": False,
+            "page_status": page_status,
+            "message": str(e)
+        }
+
+    # 3. 학교 검색 요청
+    try:
+        results = school_search(
+            query,
+            protocol.endpoint,
+            protocol
+        )
+
+        return {
+            "stage": "completed",
+            "success": True,
+            "page_status": page_status,
+            "token_detected": token_detected,
+            "school_count": len(results),
+            "schools": [
+                {
+                    "school_name": item[2],
+                    "school_code": item[3]
+                }
+                for item in results
+                if len(item) >= 4
+            ]
+        }
+
+    except Exception as e:
+        return {
+            "stage": "school_search",
+            "success": False,
+            "page_status": page_status,
+            "token_detected": token_detected,
+            "message": str(e)
+        }
+
+
+@app.get("/api/diagnostics/comcigan")
+async def comcigan_diagnostics(
+    query: str = Query("중계", min_length=1)
+):
+    return await run_in_threadpool(
+        diagnose_comcigan,
+        query
+    )
